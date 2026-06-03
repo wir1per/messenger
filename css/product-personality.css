@@ -1,0 +1,229 @@
+/* ============================================
+   PRODUCT PERSONALITY & BRAND IDENTITY
+   Memorable logo, unique visual identity
+   ============================================ */
+
+/* Wiriper Prime Brand Logo System */
+.wiriper-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #e8c372, #fef9d0, #c79b46);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: logoShine 4s ease-in-out infinite;
+}
+
+.wiriper-logo::before {
+    content: '👑';
+    font-size: 20px;
+    display: block;
+    filter: drop-shadow(0 0 8px rgba(232, 195, 114, 0.6));
+    animation: logoPulse 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+@keyframes logoShine {
+    0%, 100% { background-position: 0% center; }
+    50% { background-position: 100% center; }
+}
+
+@keyframes logoPulse {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.1) rotate(2deg); }
+}
+
+/* Custom icon language */
+.icon-status-online {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #34d399, #6ee7b7);
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.6),
+                inset -1px -1px 2px rgba(0, 0, 0, 0.3);
+    animation: statusPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(52, 211, 153, 0.6),
+                           inset -1px -1px 2px rgba(0, 0, 0, 0.3); }
+    50% { box-shadow: 0 0 24px rgba(52, 211, 153, 0.9),
+                      inset -1px -1px 2px rgba(0, 0, 0, 0.3); }
+}
+
+/* Signature interaction style */
+.wiriper-interaction {
+    position: relative;
+    overflow: hidden;
+}
+
+.wiriper-interaction::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(232, 195, 114, 0.2), transparent);
+    animation: interactionSweep 0.6s ease-in-out;
+}
+
+@keyframes interactionSweep {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Distinct accent colors */
+:root {
+    --wiriper-primary: #e8c372;
+    --wiriper-secondary: #b07cff;
+    --wiriper-accent: #34d399;
+    --wiriper-dark: #0a0a0f;
+    --wiriper-light: #f4f4f7;
+}
+
+/* Recognizable onboarding flow */
+.onboarding-step {
+    animation: onboardingSlide 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes onboardingSlide {
+    0% {
+        opacity: 0;
+        transform: translateX(100px) rotateY(20deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) rotateY(0deg);
+    }
+}
+
+/* Unique empty states */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 40px;
+    background: linear-gradient(135deg,
+        rgba(232, 195, 114, 0.02) 0%,
+        transparent 50%,
+        rgba(176, 124, 255, 0.02) 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(232, 195, 114, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.empty-state::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(232, 195, 114, 0.04) 0%, transparent 70%);
+    animation: emptyStatePulse 4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes emptyStatePulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    animation: emptyStateFloat 3s ease-in-out infinite;
+}
+
+@keyframes emptyStateFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+.empty-state-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--txt);
+    margin-bottom: 8px;
+}
+
+.empty-state-subtext {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Polished branding elements */
+.brand-accent {
+    position: relative;
+    display: inline-block;
+}
+
+.brand-accent::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--wiriper-primary), var(--wiriper-secondary));
+    animation: brandUnderline 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes brandUnderline {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+/* Wiriper badge system */
+.badge-premium {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, var(--wiriper-primary), var(--wiriper-secondary));
+    color: #1a1408;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(232, 195, 114, 0.3);
+    animation: badgePremiumPulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePremiumPulse {
+    0%, 100% { box-shadow: 0 4px 12px rgba(232, 195, 114, 0.3); }
+    50% { box-shadow: 0 4px 20px rgba(232, 195, 114, 0.5); }
+}
+
+/* Distinctive visual marks */
+.wiriper-divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(232, 195, 114, 0.3),
+        transparent);
+    margin: 16px 0;
+    position: relative;
+}
+
+.wiriper-divider::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background: var(--wiriper-primary);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--wiriper-primary);
+}
