@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Wiriper Prime - Premium real-time messaging platform">
+    <title>Wiriper Prime - Elite Messaging</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0a0f;
+            color: #f4f4f7;
+            overflow-x: hidden;
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(232, 195, 114, 0.1) 0%, rgba(176, 124, 255, 0.05) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(232, 195, 114, 0.05) 0%, transparent 70%);
+            animation: floatingLight 20s ease-in-out infinite;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .hero h1 {
+            font-size: 64px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #e8c372, #fef9d0, #c79b46);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            animation: shineText 3s ease-in-out infinite;
+        }
+        
+        .hero p {
+            font-size: 24px;
+            color: #9a9aae;
+            margin-bottom: 40px;
+            animation: slideUp 0.8s ease-out;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #e8c372, #b07cff);
+            color: #1a1408;
+            padding: 16px 40px;
+            border-radius: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            transition: all 0.3s ease-out;
+            box-shadow: 0 8px 24px rgba(232, 195, 114, 0.3);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(232, 195, 114, 0.4);
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 80px 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .feature {
+            background: rgba(20, 20, 30, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(22px);
+            animation: slideUp 0.8s ease-out both;
+        }
+        
+        .feature:nth-child(2) { animation-delay: 200ms; }
+        .feature:nth-child(3) { animation-delay: 400ms; }
+        
+        .feature h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #e8c372;
+        }
+        
+        .feature p {
+            color: #9a9aae;
+            line-height: 1.6;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #9a9aae;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        @keyframes floatingLight {
+            0%, 100% { transform: translate(0, 0); opacity: 0.3; }
+            50% { transform: translate(100px, 50px); opacity: 0.5; }
+        }
+        
+        @keyframes shineText {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 100% center; }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>👑 Wiriper Prime</h1>
+            <p>Premium Real-Time Messaging Platform</p>
+            <a href="index.html" class="cta-button">Launch App</a>
+        </div>
+    </section>
+    
+    <section class="features">
+        <div class="feature">
+            <h3>⚡ Lightning Fast</h3>
+            <p>Real-time messaging with cinematic animations and zero lag. Experience messaging that feels alive.</p>
+        </div>
+        <div class="feature">
+            <h3>🎬 Premium Motion</h3>
+            <p>Framer Motion-quality animations with spring physics. Every interaction feels intentional and smooth.</p>
+        </div>
+        <div class="feature">
+            <h3>✨ Immersive Design</h3>
+            <p>Emotionally designed UI with atmospheric effects. A communication platform that feels luxurious.</p>
+        </div>
+    </section>
+    
+    <footer>
+        <p>Wiriper Prime © 2026 | Crafted with premium design</p>
+    </footer>
+</body>
+</html>
