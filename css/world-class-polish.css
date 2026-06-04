@@ -1,8 +1,0 @@
-
-:root{--wc-accent:#8b5cf6;--wc-accent-2:#06b6d4}
-html::before{content:"";position:fixed;inset:-20%;pointer-events:none;filter:blur(54px);
-background:radial-gradient(circle at 18% 20%,rgba(139,92,246,.34),transparent 32%)}
-.wc-floating-surface{position:relative}
-.wc-message-enter{animation:wcMessageEnter .56s both}
-@keyframes wcMessageEnter{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-.wc-pointer-glow{position:fixed;width:360px;height:360px;border-radius:999px;pointer-events:none}
