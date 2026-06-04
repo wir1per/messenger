@@ -1,0 +1,32 @@
+/* css/layout-overlap-hotfix.css */
+/* Wiriper Prime — critical layout overlap fixes */
+*,
+*::before,
+*::after { box-sizing:border-box; }
+html,body{overflow-x:hidden;}
+body{direction:rtl;}
+.sidebar,.chat-view,.chat-panel,.main-chat,.app-shell,.app{min-width:0;}
+.sidebar{position:relative;width:350px;min-width:310px;max-width:100%;overflow:hidden;isolation:isolate;}
+.sidebar-header,.sidebar-top,.chats-header,.chat-list-header{position:relative;z-index:5;min-width:0;}
+.search-row{position:relative;z-index:3;display:flex;align-items:center;gap:10px;width:100%;min-width:0;padding-inline:12px;}
+.search-row input{width:100%;min-width:0;flex:1 1 auto;padding-inline-start:44px;padding-inline-end:16px;}
+.new-menu{position:relative;z-index:6;display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;max-width:100%;}
+.new-menu button,.new-menu .menu-btn,.new-menu .icon-btn{position:relative;z-index:7;flex:0 0 auto;width:40px;height:40px;min-width:40px;border-radius:14px;}
+.chat-list,.dialogs-list,.conversation-list{position:relative;z-index:1;min-width:0;overflow-x:hidden;}
+.chat-item,.dialog-item,.conversation-item{position:relative;z-index:1;min-width:0;overflow:hidden;}
+.chat-item *,.dialog-item *,.conversation-item *{min-width:0;}
+.chat-item .title,.dialog-item .title,.conversation-item .title,.chat-item .last-message,.dialog-item .last-message,.conversation-item .last-message{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sidebar .topbar,.sidebar .header,.sidebar .sidebar-header,.sidebar .chats-header{display:flex;align-items:center;gap:10px;min-width:0;}
+.sidebar .topbar .search-row,.sidebar .header .search-row,.sidebar .sidebar-header .search-row,.sidebar .chats-header .search-row{flex:1 1 auto;min-width:0;}
+.sidebar .topbar .new-menu,.sidebar .header .new-menu,.sidebar .sidebar-header .new-menu,.sidebar .chats-header .new-menu{flex:0 0 auto;}
+.chat-header,.conversation-header,.main-header,.message-header{position:relative;z-index:10;display:flex;align-items:center;gap:12px;min-width:0;width:100%;overflow:hidden;padding-inline:14px;}
+.chat-header .profile,.chat-header .chat-profile,.chat-header .contact-info,.chat-header .header-info,.conversation-header .profile,.conversation-header .chat-profile,.conversation-header .contact-info,.conversation-header .header-info{flex:1 1 auto;min-width:0;overflow:hidden;}
+.chat-header .avatar,.conversation-header .avatar,.main-header .avatar,.message-header .avatar{flex:0 0 auto;width:42px;height:42px;}
+.chat-header .name,.chat-header .title,.chat-header .username,.chat-header .status,.chat-header .presence,.conversation-header .name,.conversation-header .title,.conversation-header .username,.conversation-header .status,.conversation-header .presence{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chat-header .actions,.chat-header .header-actions,.chat-header .chat-actions,.conversation-header .actions,.conversation-header .header-actions,.conversation-header .chat-actions{flex:0 0 auto;display:flex;align-items:center;gap:6px;max-width:44%;overflow:hidden;}
+.chat-header button,.conversation-header button,.main-header button,.message-header button{flex:0 0 auto;width:40px;height:40px;min-width:40px;}
+@media (max-width:768px){.sidebar{width:100%;min-width:0}.chat-header,.conversation-header,.main-header,.message-header{min-height:60px}}
+@media (max-width:480px){.sidebar{width:100vw;max-width:100vw}.chat-header .actions,.conversation-header .actions{max-width:112px}}
+.new-menu[aria-expanded='true'],.new-menu.open,.new-menu.active{z-index:50;}
+.new-menu .dropdown,.new-menu .menu-dropdown,.new-menu .popover{position:absolute;z-index:60;inset-block-start:calc(100% + 8px);inset-inline-end:0;}
+button,[role='button'],.icon-btn,.menu-btn{touch-action:manipulation;}
