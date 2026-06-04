@@ -17,13 +17,8 @@
     <link rel="stylesheet" href="css/realtime-feeling.css">
     <link rel="stylesheet" href="css/advanced-chat.css">
     <link rel="stylesheet" href="css/loading-quality.css">
-    <!-- Production Polish CSS -->
     <link rel="stylesheet" href="css/production-polish.css">
-    <!-- Note: The following hotfix CSS files have been retired; their corrections are now integrated into the main inline styles -->
-    <!-- <link rel="stylesheet" href="css/mobile-ui-fixes.css"> -->
-    <!-- <link rel="stylesheet" href="css/world-class-mobile-fixes.css"> -->
-    <!-- <link rel="stylesheet" href="css/layout-overlap-hotfix.css"> -->
-    <!-- <link rel="stylesheet" href="css/ultimate-ios-layout-fix.css"> -->
+    <!-- Removed hotfix files as corrections are now built in -->
 
     <title>Wiriper Prime | پیام‌رسان سلطنتی</title>
     <style>
@@ -317,7 +312,6 @@
 
         /* ---- SIDEBAR ---- */
         .sidebar { width: 350px; min-width: 310px; background: var(--bg2); border-left: 1px solid rgba(255,255,255,0.025); display: flex; flex-direction: column; z-index: 10; flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); will-change: transform; }
-        /* FIX: Establish positioning context for the dropdown menu */
         .side-header { position: relative; display: flex; align-items: center; gap: 10px; padding: max(12px, var(--safe-top)) 14px 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.025); background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
         .me-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; background: var(--bg); border: 2px solid var(--gold2); box-shadow: 0 0 14px rgba(232,195,114,0.2); transition: var(--transition-bounce); flex-shrink: 0; }
         .me-avatar.premium { animation: pulseBorder 2.5s infinite alternate, glowPulse 3s infinite; }
@@ -329,10 +323,32 @@
         .icon-btn:hover { background: rgba(232,195,114,0.12); border-color: var(--gold2); box-shadow: var(--gold-glow); transform: rotate(90deg); }
 
         /* Tabs & Search */
+        /* ---- FIX: Main tabs buttons now flex with centered icon+text ---- */
         .main-tabs { display: flex; padding: 7px 12px; gap: 5px; background: var(--bg2); border-bottom: 1px solid rgba(255,255,255,0.025); }
-        .main-tabs button { flex: 1; padding: 8px; background: transparent; color: var(--muted); border-radius: 11px; font-size: 11px; font-weight: 800; transition: var(--transition-smooth); }
-        .main-tabs button:hover { background: rgba(255,255,255,0.025); color: var(--txt); }
-        .main-tabs button.active { background: rgba(232,195,114,0.08); color: var(--gold2); box-shadow: inset 0 0 6px rgba(232,195,114,0.06); }
+        .main-tabs button {
+            flex: 1;
+            padding: 8px 6px;
+            background: transparent;
+            color: var(--muted);
+            border-radius: 11px;
+            font-size: 13px;          /* increased from 11px */
+            font-weight: 800;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .main-tabs button:hover {
+            background: rgba(255,255,255,0.025);
+            color: var(--txt);
+        }
+        .main-tabs button.active {
+            background: rgba(232,195,114,0.08);
+            color: var(--gold2);
+            box-shadow: inset 0 0 6px rgba(232,195,114,0.06);
+        }
         .search-row { padding: 10px 14px; background: var(--bg2); }
         .search-row input { width: 100%; padding: 11px 16px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.03); border-radius: 20px; color: var(--txt); font-size: 12px; text-align: right; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3); transition: var(--transition-smooth); }
         .search-row input:focus { border-color: var(--gold2); background: rgba(0,0,0,0.7); box-shadow: 0 0 12px rgba(232,195,114,0.1), inset 0 2px 6px rgba(0,0,0,0.4); }
@@ -364,7 +380,6 @@
         .empty-chat .big { font-size: 70px; margin-bottom: 14px; filter: drop-shadow(0 0 30px rgba(232,195,114,0.15)); animation: floatUp 3s var(--ease-in-out) infinite; }
         .empty-chat .empty-title { font-size: var(--font-lg); font-weight: 900; letter-spacing: 0.5px; margin-bottom: 5px; color: var(--txt); opacity: 0.75; }
         .empty-chat .empty-sub { font-size: var(--font-sm); opacity: 0.5; }
-        /* FIX: Establish positioning context for chat header dropdown */
         .chat-header { position: relative; display: flex; align-items: center; gap: 10px; padding: max(9px, var(--safe-top)) 14px 9px 14px; background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); z-index: 20; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
         .chat-header .back { display: none; color: var(--txt); font-size: 20px; background: none; padding: 0 6px; flex-shrink: 0; }
         .chat-header .h-av { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: var(--bg); display: flex; align-items: center; justify-content: center; color: var(--gold2); cursor: pointer; border: 2px solid transparent; transition: var(--transition-bounce); flex-shrink: 0; }
@@ -474,12 +489,53 @@
         .bg-opt.sel { border-color: var(--gold2); box-shadow: var(--gold-glow-strong); }
         .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(60px) scale(0.86); background: rgba(14,17,26,0.97); color: #fff; padding: 11px 24px; border-radius: 20px; font-size: 13px; font-weight: 800; z-index: 200; border: 1px solid var(--gold2); opacity: 0; transition: all 0.32s cubic-bezier(0.2,0.8,0.2,1); box-shadow: 0 7px 22px rgba(0,0,0,0.5), var(--gold-glow); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: flex; align-items: center; gap: 7px; pointer-events: none; }
         .toast.show { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
-        /* FIX: Dropdown menu now properly anchored to its header */
-        .menu-pop { position: absolute; top: 60px; left: 14px; background: rgba(16,19,28,0.97); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-lg); padding: 7px; z-index: 30; display: none; min-width: 200px; max-width: calc(100vw - 28px); box-shadow: var(--elevation-3); animation: popIn 0.2s cubic-bezier(0.2,0.8,0.2,1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-        .menu-pop button { display: block; width: 100%; text-align: right; padding: 11px 14px; background: none; color: var(--txt); border-radius: 10px; font-size: 12px; font-weight: 800; transition: var(--transition-fast); margin-bottom: 2px; }
-        .menu-pop button:hover { background: rgba(255,255,255,0.03); transform: translateX(-3px); color: var(--gold2); }
-        .menu-pop button.danger { color: var(--danger); }
-        .menu-pop button.danger:hover { background: rgba(255,59,48,0.12); color: #fff; }
+
+        /* ---- FIX: Dropdown menu – larger, bolder, fully isolated ---- */
+        .menu-pop {
+            position: absolute;
+            top: 60px;
+            left: 14px;
+            background: rgba(10, 10, 20, 0.98);  /* darker, more opaque */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-lg);
+            padding: 10px;
+            z-index: 60;                    /* higher than sidebar (10) and chat panel (30) */
+            display: none;
+            min-width: 220px;
+            max-width: calc(100vw - 28px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
+        }
+        .menu-pop button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            text-align: right;
+            padding: 12px 16px;
+            background: none;
+            color: var(--txt);
+            border-radius: 12px;
+            font-size: 15px;               /* larger, readable Persian */
+            font-weight: 700;
+            transition: var(--transition-fast);
+            margin-bottom: 2px;
+            border: none;
+        }
+        .menu-pop button:hover {
+            background: rgba(232,195,114,0.15);
+            transform: translateX(-4px);
+            color: #fff;
+        }
+        .menu-pop button.danger {
+            color: var(--danger);
+        }
+        .menu-pop button.danger:hover {
+            background: rgba(255,59,48,0.15);
+            color: #fff;
+        }
         .info-section-title { font-size: 11px; color: var(--gold2); font-weight: 800; margin: 14px 0 5px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
         .mock-content { text-align: center; padding: 22px 10px; }
         .mock-icon { font-size: 46px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); margin-bottom: 10px; animation: popIn 0.3s ease; }
@@ -509,7 +565,8 @@
             .auth-card { padding: 22px 14px; border-radius: var(--radius-lg); }
             .splash-crown { font-size: 55px; }
             .splash-title { font-size: 28px; }
-            /* Sidebar already full width, no duplicate rule needed */
+            /* Keep main tabs readable on mobile */
+            .main-tabs button { font-size: 12px; gap: 4px; padding: 8px 4px; }
         }
         @media(max-width:420px) {
             .side-header { padding: max(9px, var(--safe-top)) 10px 9px 10px; gap: 7px; }
@@ -520,9 +577,8 @@
             .av { width: 36px; height: 36px; font-size: 15px; }
             .ci-name { font-size: 11px; }
             .ci-last { font-size: 10px; }
-            .main-tabs button { font-size: 9px; padding: 6px; }
+            .main-tabs button { font-size: 11px; gap: 3px; padding: 6px 2px; }  /* still readable */
             .search-row input { padding: 9px 12px; font-size: 11px; }
-            /* FIX: Preserve safe-area bottom padding on mobile */
             .input-bar { padding: 5px 8px; padding-bottom: max(5px, var(--safe-bottom)); gap: 4px; }
             .input-bar textarea { min-height: 34px; font-size: 11px; padding: 6px 10px; }
             .send-btn { width: 34px; height: 34px; font-size: 13px; }
@@ -538,6 +594,8 @@
             .auth-logo h1 { font-size: 24px; }
             .auth-tabs button { font-size: 10px; padding: 8px; }
             .field input, .field textarea { padding: 10px 12px; font-size: 12px; }
+            /* Dropdown menu also scales down slightly */
+            .menu-pop button { font-size: 14px; padding: 10px 14px; }
         }
         @media(max-width:360px) {
             .chat-item { padding: 5px 7px; gap: 5px; }
@@ -547,6 +605,7 @@
             .b-text { font-size: 10px; line-height: 1.3; }
             .input-bar textarea { min-height: 30px; font-size: 10px; }
             .send-btn { width: 30px; height: 30px; }
+            .main-tabs button { font-size: 10px; gap: 2px; }
         }
         @media(min-width:801px) {
             .chat-panel { position: relative; transform: none; }
@@ -987,10 +1046,10 @@
             $('btnRoyalDecree').style.display = ME.isPremium ? 'flex' : 'none'; }
         window.toggleMenu = function(e) { e.stopPropagation();
             const m = $('mainMenu');
-            m.style.display = m.style.display === 'block' ? 'none' : 'block'; };
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };  /* changed to flex */
         window.toggleChatMenu = function(e) { e.stopPropagation();
             const m = $('chatMenu');
-            m.style.display = m.style.display === 'block' ? 'none' : 'block'; };
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
         document.addEventListener('click', () => { $('mainMenu').style.display = 'none';
             $('chatMenu').style.display = 'none'; });
         document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { $('mainMenu').style.display = 'none';
