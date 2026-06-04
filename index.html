@@ -167,7 +167,7 @@
             100% { opacity: 0; transform: translateY(-50px) scale(0); }
         }
 
-        /* ---- SKELETON ANIMATION ---- */
+        /* ---- SKELETON ---- */
         .skeleton {
             background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
             background-size: 200% 100%;
@@ -178,17 +178,21 @@
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
         }
-        .skeleton-av { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
+        .skeleton-av { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; background: rgba(255,255,255,0.05); }
         .skeleton-line { height: 12px; border-radius: 6px; margin-bottom: 6px; background: rgba(255,255,255,0.04); }
         .skeleton-line.short { width: 45%; }
         .skeleton-line.medium { width: 75%; }
+        .skeleton-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin: 3px 10px; }
+        .skeleton-col { flex: 1; min-width: 0; }
 
         /* ---- KEYFRAMES & INTERFACES ---- */
         @keyframes popIn { 0% { opacity: 0; transform: translateY(6px) scale(0.95); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes pulseBorder { 0% { border-color: var(--gold2); box-shadow: var(--gold-glow); } 100% { border-color: #fff; box-shadow: var(--gold-glow-strong); } }
         @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.35; } 30% { transform: translateY(-6px); opacity: 1; } }
+        @keyframes floatUp { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
         
         button { cursor: pointer; border: none; font-family: inherit; transition: var(--transition-fast); outline: none; position: relative; overflow: hidden; }
         button:active { transform: scale(0.95); }
@@ -198,6 +202,28 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(212, 168, 50, 0.15); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--gold2); }
+
+        /* ---- OFFLINE BAR (بهبود از کد دوم) ---- */
+        #offlineOverlay {
+            display: none;
+            position: fixed;
+            top: env(safe-area-inset-top, 0);
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #b30000, #ff3b30);
+            color: #fff;
+            text-align: center;
+            padding: 8px 16px;
+            font-size: var(--font-sm);
+            font-weight: 800;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+        #offlineOverlay.show { display: flex; }
 
         /* ---- AUTH SCREEN ---- */
         #authScreen {
@@ -234,35 +260,14 @@
         .field input, .field textarea { width: 100%; padding: 13px 16px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius); color: var(--txt); font-size: var(--font-md); }
         .field input:focus, .field textarea:focus { border-color: var(--gold2); background: rgba(0, 0, 0, 0.65); box-shadow: 0 0 12px rgba(212, 168, 50, 0.15); }
         
-        .btn-main { width: 100%; padding: 13px; background: var(--premium); color: #000; font-weight: 900; font-size: var(--font-md); border-radius: var(--radius); box-shadow: var(--gold-glow); }
+        .btn-main { width: 100%; padding: 13px; background: var(--premium); color: #000; font-weight: 900; font-size: var(--font-md); border-radius: var(--radius); box-shadow: var(--gold-glow); transition: var(--transition-smooth); }
         .btn-main:hover { transform: translateY(-1px); box-shadow: var(--gold-glow-strong); }
+        .btn-main:active { transform: scale(0.96); }
         
         .auth-msg { margin-top: 12px; font-size: 12px; text-align: center; min-height: 18px; font-weight: bold; opacity: 0; transition: opacity 0.2s; }
         .auth-msg.show { opacity: 1; }
         .auth-msg.err { color: var(--danger); }
         .auth-msg.ok { color: var(--green); }
-
-        /* ---- GRACEFUL OFFLINE BAR ---- */
-        #offlineOverlay {
-            display: none;
-            position: fixed;
-            top: env(safe-area-inset-top, 0);
-            left: 0;
-            right: 0;
-            background: linear-gradient(90deg, #b30000, #ff3b30);
-            color: #fff;
-            text-align: center;
-            padding: 8px 16px;
-            font-size: var(--font-sm);
-            font-weight: 800;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            animation: fadeIn 0.3s ease;
-        }
-        #offlineOverlay.show { display: flex; }
 
         /* ---- APP LAYOUT ---- */
         #app { display: none; height: 100dvh; }
@@ -287,49 +292,75 @@
         .side-header .me-name { font-size: var(--font-md); font-weight: 800; color: var(--txt); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .side-header .me-id { font-size: 10px; color: var(--gold2); font-weight: 600; opacity: 0.8; }
         
-        .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.025); color: var(--gold2); font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, 0.03); }
+        .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.025); color: var(--gold2); font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, 0.03); transition: var(--transition-fast); }
         .icon-btn:hover { background: rgba(212, 168, 50, 0.12); border-color: var(--gold2); }
 
         .main-tabs { display: flex; padding: 7px 12px; gap: 5px; background: var(--bg2); border-bottom: 1px solid rgba(255, 255, 255, 0.025); }
-        .main-tabs button { flex: 1; padding: 8px; background: transparent; color: var(--muted); border-radius: 11px; font-size: 11px; font-weight: 800; }
+        .main-tabs button { flex: 1; padding: 8px; background: transparent; color: var(--muted); border-radius: 11px; font-size: 11px; font-weight: 800; transition: var(--transition-fast); }
         .main-tabs button.active { background: rgba(212, 168, 50, 0.08); color: var(--gold2); }
         
         .search-row { padding: 10px 14px; }
-        .search-row input { width: 100%; padding: 11px 16px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 20px; color: var(--txt); font-size: 12px; }
+        .search-row input { width: 100%; padding: 11px 16px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 20px; color: var(--txt); font-size: 12px; transition: var(--transition-smooth); }
         .search-row input:focus { border-color: var(--gold2); background: rgba(0, 0, 0, 0.7); }
 
         .new-menu { display: flex; gap: 8px; padding: 0 14px 10px; }
-        .new-menu button { flex: 1; padding: 10px; background: rgba(255, 255, 255, 0.015); color: var(--gold2); border-radius: 13px; font-size: 11px; border: 1px solid rgba(255, 255, 255, 0.03); font-weight: 800; }
-        .new-menu button:hover { background: rgba(212, 168, 50, 0.08); border-color: var(--gold2); }
+        .new-menu button { flex: 1; padding: 10px; background: rgba(255, 255, 255, 0.015); color: var(--gold2); border-radius: 13px; font-size: 11px; border: 1px solid rgba(255, 255, 255, 0.03); font-weight: 800; transition: var(--transition-smooth); }
+        .new-menu button:hover { background: rgba(212, 168, 50, 0.08); border-color: var(--gold2); transform: translateY(-2px); }
 
-        .chat-list { flex: 1; overflow-y: auto; padding-bottom: 14px; }
+        .chat-list { flex: 1; overflow-y: auto; padding-bottom: 14px; -webkit-overflow-scrolling: touch; }
         .chat-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; border-radius: var(--radius); margin: 3px 8px; border: 1px solid transparent; transition: background 0.15s; }
         .chat-item:hover { background: rgba(255, 255, 255, 0.02); }
         .chat-item.active { background: rgba(212, 168, 50, 0.08); border-color: rgba(212, 168, 50, 0.2); }
         
-        .av { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: var(--panel2); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--gold2); flex-shrink: 0; border: 2px solid transparent; }
-        .chat-item.active .av { border-color: var(--gold2); }
+        .av { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: var(--panel2); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--gold2); flex-shrink: 0; border: 2px solid transparent; transition: var(--transition-smooth); }
+        .chat-item.active .av { border-color: var(--gold2); box-shadow: var(--gold-glow); }
         .ci-main { flex: 1; min-width: 0; }
         .ci-name { font-size: var(--font-sm); font-weight: 800; display: flex; align-items: center; gap: 6px; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ci-name .tag { font-size: 9px; background: var(--gold2); color: #000; padding: 1px 5px; border-radius: 4px; font-weight: 900; }
         .ci-name .subtitle-explain { font-size: 9px; color: var(--muted); font-weight: normal; margin-right: auto; }
-        .ci-last { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+        .ci-last { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; font-weight: 500; }
         .ci-time { font-size: 9px; color: var(--muted); margin-right: 6px; }
+        .unread-badge { background: var(--gold2); color: #000; font-size: 10px; font-weight: 900; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 6px; margin-right: 6px; }
 
-        /* ---- CHAT PANEL ---- */
+        /* ---- CHAT PANEL (با الهام از کد دوم) ---- */
         .chat-panel { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; min-width: 0; }
-        .chat-blank { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 50%, #070a14, #020308); z-index: 4; padding: 24px; text-align: center; }
-        .chat-blank span { font-size: 60px; filter: drop-shadow(0 0 20px rgba(212,168,50,0.2)); animation: floatUp 4s ease-in-out infinite; }
-        .chat-blank h2 { font-size: var(--font-lg); font-weight: 900; color: var(--gold); margin-top: 14px; }
+        .chat-blank {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% 50%, #070a14, #020308);
+            z-index: 4;
+            padding: 24px;
+            text-align: center;
+            gap: 12px;
+        }
+        .chat-blank span { font-size: 60px; filter: drop-shadow(0 0 20px rgba(212,168,50,0.2)); animation: floatUp 4s ease-in-out infinite; display: block; }
+        .chat-blank h2 { font-size: var(--font-lg); font-weight: 900; color: var(--gold); margin-top: 8px; }
         .chat-blank p { font-size: var(--font-sm); color: var(--muted); margin-top: 6px; max-width: 280px; line-height: 1.5; }
-        
+
         .chat-header { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.025); background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); z-index: 5; }
-        .chat-header .back { display: none; font-size: 18px; color: var(--gold2); background: none; padding: 4px; margin-left: 4px; }
+        .chat-header .back { display: none; font-size: 18px; color: var(--gold2); background: none; padding: 4px; margin-left: 4px; transition: var(--transition-fast); }
+        .chat-header .back:active { transform: scale(0.9); }
         .chat-header .h-info { flex: 1; min-width: 0; cursor: pointer; }
         .chat-header .h-name { font-size: var(--font-md); font-weight: 800; display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .chat-header .h-sub { font-size: 11px; color: var(--muted); margin-top: 1px; font-weight: 600; }
 
-        .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; background-size: cover; background-position: center; position: relative; }
+        /* Messages area with drag-drop effect */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
         .messages.dragover::after {
             content: '📥 فایل را جهت فرستادن رها کنید';
             position: absolute;
@@ -347,645 +378,210 @@
             pointer-events: none;
         }
 
-        /* ---- MESSAGE BUBBLES ---- */
-        .msg-row { display: flex; width: 100%; max-width: 75%; animation: popIn 0.2s cubic-bezier(0.25, 1, 0.5, 1); align-self: flex-start; flex-direction: column; margin-bottom: 2px; }
-        .msg-row.me { align-self: flex-end; align-items: flex-end; }
-        .msg-sender { font-size: 10px; color: var(--gold); font-weight: 700; margin-bottom: 3px; margin-right: 6px; }
-        .msg-row.me .msg-sender { margin-right: 0; margin-left: 6px; }
+        /* ---- TYPING & BUBBLES (حفظ قابلیت‌های پیشرفته) ---- */
+        .typing-indicator { display: none; align-items: center; gap: 5px; padding: 6px 16px; font-size: var(--font-xs); color: var(--gold); font-weight: 600; background: rgba(0,0,0,0.2); border-radius: 20px; margin: 4px 16px; width: fit-content; }
+        .typing-indicator.show { display: flex; }
+        .typing-dots { display: flex; gap: 3px; }
+        .typing-dots span { width: 5px; height: 5px; background: var(--gold2); border-radius: 50%; display: inline-block; animation: typingDot 1.2s ease-in-out infinite; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
         
-        .bubble { padding: 10px 14px; border-radius: var(--radius-lg); background: var(--other); color: var(--txt); font-size: var(--font-md); line-height: 1.5; position: relative; box-shadow: var(--elevation-1); border: 1px solid rgba(255, 255, 255, 0.015); word-break: break-word; }
-        .msg-row.me .bubble { background: var(--me); border-top-left-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-lg); }
-        .msg-row:not(.me) .bubble { border-top-right-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-lg); }
+        .msg-row { display: flex; max-width: 80%; gap: 4px; opacity: 0; animation: popIn 0.2s ease-out forwards; align-self: flex-end; transform-origin: bottom left; flex-direction: column; margin-bottom: 6px; }
+        .msg-row.me { align-self: flex-start; transform-origin: bottom right; }
+        .msg-sender { font-size: 10px; color: var(--gold); font-weight: 700; margin-bottom: 2px; margin-right: 6px; cursor: pointer; }
+        .msg-row.me .msg-sender { margin-right: 0; margin-left: 6px; text-align: left; }
+        .bubble { background: var(--other); padding: 8px 12px; border-radius: var(--radius); border-bottom-left-radius: 3px; position: relative; word-break: break-word; box-shadow: var(--elevation-1); border: 1px solid rgba(255, 255, 255, 0.025); transition: var(--transition-fast); }
+        .msg-row.me .bubble { background: var(--me); border-bottom-left-radius: var(--radius); border-bottom-right-radius: 3px; border: 1px solid rgba(212, 168, 50, 0.06); }
+        .b-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 8px; color: rgba(255, 255, 255, 0.45); margin-top: 4px; font-weight: 600; }
+        .tick { font-size: 10px; font-weight: 900; margin-left: 2px; }
+        .tick.seen { color: var(--gold2); filter: drop-shadow(0 0 2px rgba(212, 168, 50, 0.4)); }
         
-        .b-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 9px; color: var(--muted); margin-top: 5px; font-weight: 600; }
-        .tick { font-size: 10px; font-weight: 900; }
-        .tick.seen { color: var(--gold2); }
-
         /* ---- INPUT BAR ---- */
         .input-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-top: 1px solid rgba(255, 255, 255, 0.025); z-index: 5; padding-bottom: calc(10px + var(--safe-bottom)); }
-        .input-bar textarea { flex: 1; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 20px; padding: 10px 16px; color: var(--txt); font-size: var(--font-md); max-height: 120px; min-height: 38px; resize: none; line-height: 1.4; }
+        .input-bar textarea { flex: 1; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 20px; padding: 10px 16px; color: var(--txt); font-size: var(--font-md); max-height: 110px; min-height: 38px; resize: none; line-height: 1.4; transition: var(--transition-smooth); }
         .input-bar textarea:focus { border-color: rgba(212, 168, 50, 0.4); background: rgba(0,0,0,0.55); }
-        .send-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--premium); color: #000; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: var(--gold-glow); }
-
-        /* ---- ONBOARDING DIALOG ---- */
+        .send-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--premium); color: #000; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: var(--gold-glow); transition: var(--transition-bounce); }
+        .send-btn:active { transform: scale(0.92); }
+        
+        /* ---- ONBOARDING MODAL (بهبود از کد دوم) ---- */
         .onboarding-modal { text-align: center; max-width: 420px !important; }
         .onboarding-slide { display: none; animation: fadeIn 0.3s ease; padding: 10px 0; }
         .onboarding-slide.active { display: block; }
         .onboarding-graphic { font-size: 50px; margin-bottom: 12px; filter: drop-shadow(0 0 15px rgba(212,168,50,0.3)); }
         .onboarding-title { font-size: var(--font-lg); color: var(--gold); font-weight: 900; margin-bottom: 8px; }
         .onboarding-desc { font-size: var(--font-sm); color: #bcbfca; line-height: 1.6; margin-bottom: 16px; }
-        .onboarding-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; }
+        .onboarding-dots { display: flex; justify-content: center; gap: 6px; margin: 18px 0 8px; }
         .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: 0.2s; }
         .onboarding-dot.active { background: var(--gold2); width: 20px; border-radius: 4px; }
 
-        /* ---- TYPING INDICATOR ---- */
-        .typing-indicator { display: none; align-items: center; gap: 5px; padding: 6px 16px; font-size: var(--font-xs); color: var(--gold); font-weight: 600; }
-        .typing-indicator.show { display: flex; }
-        .typing-dots { display: flex; gap: 3px; }
-        .typing-dots span { width: 5px; height: 5px; background: var(--gold2); border-radius: 50%; display: inline-block; animation: typingDot 1.2s ease-in-out infinite; }
-        .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
-
-        /* ---- MODALS COMPONENT ---- */
-        .modal-bg { position: fixed; inset: 0; background: rgba(1, 2, 5, 0.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s; }
+        /* ---- MODALS (حفظ قابلیت‌های قبلی) ---- */
+        .modal-bg { position: fixed; inset: 0; background: rgba(1, 2, 5, 0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s; }
         .modal-bg.show { opacity: 1; visibility: visible; }
-        .modal { width: 100%; max-width: 400px; background: var(--panel2); border: 1px solid rgba(212, 168, 50, 0.12); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--elevation-3); position: relative; animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .modal { width: 100%; max-width: 450px; max-height: 88vh; overflow-y: auto; background: var(--panel2); border: 1px solid rgba(212, 168, 50, 0.12); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--elevation-3); position: relative; animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .modal h2 { font-size: var(--font-lg); font-weight: 900; color: var(--gold); margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
-        .modal h2 .x { background: none; color: var(--muted); font-size: 16px; }
-        .modal h2 .x:hover { color: var(--danger); }
-
+        .modal h2 .x { background: rgba(255,255,255,0.05); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); transition: var(--transition-fast); }
+        .modal h2 .x:hover { color: var(--danger); transform: rotate(90deg); background: rgba(255,59,48,0.2); }
+        
         .toast-box { position: fixed; bottom: calc(75px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(14, 18, 30, 0.95); border: 1px solid rgba(212, 168, 50, 0.2); box-shadow: var(--elevation-2), var(--gold-glow); padding: 10px 18px; border-radius: 20px; font-size: var(--font-sm); font-weight: 800; color: var(--txt); display: flex; align-items: center; gap: 8px; z-index: 900; pointer-events: none; opacity: 0; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s; }
         .toast-box.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
+        
+        .menu-pop { position: absolute; top: 55px; left: 14px; background: var(--panel2); border: 1px solid rgba(212,168,50,0.2); border-radius: var(--radius-lg); padding: 8px; min-width: 190px; z-index: 100; box-shadow: var(--elevation-2); backdrop-filter: blur(20px); display: none; }
+        .menu-pop button { display: block; width: 100%; text-align: right; padding: 8px 12px; background: none; color: var(--txt); border-radius: 10px; font-size: 12px; font-weight: 800; transition: var(--transition-fast); margin-bottom: 2px; }
+        .menu-pop button:hover { background: rgba(255, 255, 255, 0.03); transform: translateX(-3px); color: var(--gold2); }
+        .menu-pop button.danger { color: var(--danger); }
+        
+        /* سایر المان‌های مورد نیاز (گالری هدیه، ریپلای، و ...) به صورت مختصر */
+        .gift-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+        .gift-opt { background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.03); border-radius: var(--radius-lg); padding: 12px; text-align: center; cursor: pointer; transition: var(--transition-bounce); }
+        .gift-opt:hover { border-color: var(--gold2); background: rgba(212,168,50,0.12); transform: scale(1.05); }
+        .gift-opt .ge { font-size: 32px; }
+        .gift-opt .gp { font-size: 12px; color: var(--gold); margin-top: 6px; font-weight: 900; }
+        .bg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .bg-opt { height: 70px; border-radius: var(--radius); cursor: pointer; border: 3px solid transparent; background-size: cover; transition: var(--transition-fast); }
+        .bg-opt.sel { border-color: var(--gold2); box-shadow: var(--gold-glow-strong); }
+        
         @media(max-width: 800px) {
             .sidebar { width: 100%; min-width: 0; }
             .chat-panel { position: fixed; inset: 0; z-index: 30; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
             .chat-panel.open { transform: translateX(0); }
             .chat-header .back { display: block; }
+            .msg-row { max-width: 88%; }
+        }
+        @media(max-width: 420px) {
+            .gift-grid { grid-template-columns: repeat(2, 1fr); }
+            .skeleton-row { padding: 8px 10px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="splashScreen">
-        <div class="splash-content">
-            <span class="splash-crown">👑</span>
-            <h1 class="splash-title">Wiriper Prime</h1>
-            <p class="splash-sub">نسخه سلطنتی ۴.۰</p>
-        </div>
+<div id="splashScreen">
+    <div class="splash-sparkles"><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
+    <div class="splash-content"><span class="splash-crown">👑</span><h1 class="splash-title">Wiriper Prime</h1><p class="splash-sub">نسخه سلطنتی ۴.۰</p></div>
+</div>
+
+<audio id="royalAudio" loop><source src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Beethoven_Symphony_No._9_in_D_minor%2C_Op._125_-_I._Allegro_ma_non_troppo%2C_un_poco_maestoso.ogg" type="audio/ogg"></audio>
+
+<div id="offlineOverlay"><span>📡 عدم اتصال پایداری شبکه. در حال تلاش برای بازسازی ارتباط سلطنتی...</span></div>
+
+<!-- AUTH -->
+<div id="authScreen"><div class="auth-card"><div class="auth-logo"><h1>👑 Wiriper Prime</h1><p>سازه ارتباطی لوکس پادشاهی</p></div>
+    <div class="auth-tabs"><button id="tabLogin" class="active" onclick="switchTab('login')">ورود به قصر</button><button id="tabReg" onclick="switchTab('reg')">تاج‌گذاری (عضویت)</button></div>
+    <div id="loginForm"><div class="field"><label>نام کاربری اختصاصی</label><input id="lUser" type="text" placeholder="king_cyrus"></div><div class="field"><label>کلید ورود (رمز عبور)</label><input id="lPass" type="password" placeholder="••••••••"></div><button class="btn-main" onclick="doLogin()">گشودن دروازه قلمرو</button></div>
+    <div id="regForm" style="display:none;"><div class="field"><label>لقب یا نام نمایشی</label><input id="rName" type="text" placeholder="کوروش بزرگ"></div><div class="field"><label>نام کاربری (حروف انگلیسی و عدد)</label><input id="rUser" type="text" placeholder="username"></div><div class="field"><label>رمز عبور امن (حداقل ۶ کاراکتر)</label><input id="rPass" type="password" placeholder="••••••••"></div><button class="btn-main" onclick="doRegister()">دریافت تاج و تخت سلطنت</button></div>
+    <div id="authMsg" class="auth-msg"></div></div></div>
+
+<div id="app"><div class="layout">
+    <div class="sidebar"><div class="side-header"><img id="meAvatar" class="me-avatar" onclick="openMyProfile()"><div class="me-info" onclick="openMyProfile()"><div id="meName" class="me-name">بارگذاری...</div><div id="meId" class="me-id">@username</div></div><button class="icon-btn" onclick="openCreditModal()" title="خزانه">🪙</button><button class="icon-btn" onclick="toggleMainMenu(event)">⚙️</button><div id="mainMenu" class="menu-pop"><button onclick="openMyProfile()">👤 شناسنامه من</button><button onclick="openPremiumModal()" style="color:var(--gold2)">👑 ارتقا به پادشاه</button><button onclick="toggleRoyalAudio()">🎵 سمفونی نهم</button><button class="danger" onclick="doLogout()">🚪 خروج از قصر</button></div></div>
+        <div class="main-tabs"><button id="btnTabChats" class="active" onclick="switchMainTab('chats')">گفتگوها</button><button id="btnTabDiscover" onclick="switchMainTab('discover')">دیوان‌های عمومی</button><button id="btnTabLeaders" onclick="switchMainTab('leaders')">برترین‌ها</button></div>
+        <div class="search-row"><input id="globalSearch" type="text" placeholder="جستجوی هم‌پیمانان یا دیوان‌ها..." oninput="handleGlobalSearch()"></div>
+        <div class="new-menu"><button onclick="openCreateModal('group')">🛠 ساخت محفل (گروه)</button><button onclick="openCreateModal('channel')">📢 ساخت دیوان (کانال)</button></div>
+        <div id="mainList" class="chat-list"><div class="skeleton-row"><div class="skeleton skeleton-av"></div><div class="skeleton-col"><div class="skeleton skeleton-line short"></div><div class="skeleton skeleton-line medium"></div></div></div></div>
     </div>
 
-    <div id="offlineOverlay">
-        <span>📡 عدم اتصال پایداری شبکه. در حال تلاش برای بازسازی ارتباط سلطنتی...</span>
+    <div class="chat-panel" id="chatPanel"><div class="chat-blank" id="chatBlank"><span>👑</span><h2>به قلمرو فرمانروایی Wiriper خوش آمدید</h2><p>جهت آغاز مکاتبه، یکی از عمارت‌ها را از زبانه راست برگزینید.</p></div>
+        <div class="chat-header" id="chatHeader" style="display:none;"><button class="back" onclick="closeChat()">➡️</button><div class="h-info" onclick="openChatInfo()"><div id="hName" class="h-name">...</div><div id="hSub" class="h-sub">...</div></div><button class="icon-btn" onclick="toggleChatMenu(event)">⋮</button><div id="chatMenu" class="menu-pop"><button onclick="openBgModal()">🖼 پرده‌خوانی</button><button id="giftBtn" onclick="openGiftModal()" style="color:var(--gold2)">🎁 پیشکش</button><button id="boostBtn" style="display:none" onclick="boostChannel()">🚀 ارتقای دیوان</button><button class="danger" onclick="clearActiveChat()">بستن عمارت</button></div></div>
+        <div id="pinnedBar" class="pinned-bar" onclick="scrollToPinned()" style="display:none;"><div class="p-title">📌 سنجاق شده</div><div class="p-text" id="pinnedText">...</div></div>
+        <div id="typingIndicator" class="typing-indicator"><span id="typingName"></span> در حال نوشتن... <div class="typing-dots"><span></span><span></span><span></span></div></div>
+        <div id="messages" class="messages"></div>
+        <div id="joinBar" class="join-bar" style="display:none; text-align:center; padding:8px;"><button class="btn-main" style="max-width:200px; margin:0 auto;" onclick="joinCurrentChannel()">پیوستن به دیوان</button></div>
+        <div id="actionBanner" class="action-banner" style="display:none; background:rgba(0,0,0,0.8); padding:6px 12px; gap:8px;"><span id="abIcon">✏️</span><span id="abTitle">ویرایش</span><button onclick="cancelAction()" style="margin-right:auto;">✕</button></div>
+        <div id="inputBar" class="input-bar" style="display:none;"><input type="file" id="fileInput" accept="image/*,video/*,.pdf" style="display:none" onchange="handleFileSelect(event)"><button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="پیوست فایل">📎</button><textarea id="msgInput" rows="1" placeholder="کتابت فرامین و ارسال پیام..." oninput="autoGrow(this); handleTyping()"></textarea><button class="send-btn" onclick="sendMessage()">➤</button></div>
     </div>
-
-    <div id="authScreen">
-        <div class="auth-card">
-            <div class="auth-logo">
-                <h1>👑 Wiriper Prime</h1>
-                <p>سازه ارتباطی لوکس پادشاهی</p>
-            </div>
-            <div class="auth-tabs">
-                <button id="tabLogin" class="active" onclick="switchTab('login')" title="ورود به حساب کاربری">ورود به قصر</button>
-                <button id="tabReg" onclick="switchTab('reg')" title="ثبت نام حساب جدید">تاج‌گذاری (عضویت)</button>
-            </div>
-            
-            <div id="loginForm">
-                <div class="field">
-                    <label for="lUser">نام کاربری اختصاصی</label>
-                    <input id="lUser" type="text" placeholder="king_cyrus" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label for="lPass">کلید ورود (رمز عبور)</label>
-                    <input id="lPass" type="password" placeholder="••••••••">
-                </div>
-                <button class="btn-main" onclick="doLogin()" title="ورود به پیام‌رسان">گشودن دروازه قلمرو</button>
-            </div>
-
-            <div id="regForm" style="display:none;">
-                <div class="field">
-                    <label for="rName">لقب یا نام نمایشی</label>
-                    <input id="rName" type="text" placeholder="کوروش بزرگ" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label for="rUser">نام کاربری (حروف انگلیسی و عدد)</label>
-                    <input id="rUser" type="text" placeholder="username" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label for="rPass">رمز عبور امن (حداقل ۶ کاراکتر)</label>
-                    <input id="rPass" type="password" placeholder="••••••••">
-                </div>
-                <button class="btn-main" onclick="doRegister()" title="ثبت حساب و دریافت سکه اولیه">دریافت تاج و تخت سلطنت</button>
-            </div>
-            <div id="authMsg" class="auth-msg"></div>
-        </div>
-    </div>
-
-    <div id="app">
-        <div class="layout">
-            
-            <div class="sidebar" id="sidebar">
-                <div class="side-header">
-                    <img id="meAvatar" class="me-avatar" alt="پروفایل من" onclick="openMyProfile()" title="مشاهده شناسنامه من">
-                    <div class="me-info" onclick="openMyProfile()">
-                        <div class="me-name" id="meName">بارگذاری...</div>
-                        <div class="me-id" id="meId">@username</div>
-                    </div>
-                    <button class="icon-btn" onclick="openCreditModal()" title="صندوق ذخیره سکه سلطنتی" aria-label="صندوق ذخیره">🪙</button>
-                    <button class="icon-btn" onclick="toggleMainMenu(event)" title="منوی اصلی تنظیمات" aria-label="منو">⚙️</button>
-                    
-                    <div id="mainMenu" class="menu-pop" style="display:none; position:absolute; top:55px; left:14px; background:var(--panel2); border:1px solid rgba(212,168,50,0.2); border-radius:10px; padding:6px; z-index:100; box-shadow:var(--elevation-2);">
-                        <button onclick="openMyProfile()" style="display:block; width:100%; padding:8px 12px; text-align:right; background:none; color:var(--txt); font-size:12px;">👤 شناسنامه من</button>
-                        <button onclick="openPremiumModal()" style="display:block; width:100%; padding:8px 12px; text-align:right; background:none; color:var(--gold); font-size:12px; font-weight:bold;">👑 ارتقا به پادشاه</button>
-                        <button onclick="doLogout()" style="display:block; width:100%; padding:8px 12px; text-align:right; background:none; color:var(--danger); font-size:12px;">🚪 خروج از قصر</button>
-                    </div>
-                </div>
-
-                <div class="main-tabs">
-                    <button id="btnTabChats" class="active" onclick="switchMainTab('chats')" title="لیست گفتگوها">گفتگوها</button>
-                    <button id="btnTabDiscover" onclick="switchMainTab('discover')" title="کاوش در تریبون‌های عمومی">دیوان‌های عمومی</button>
-                </div>
-
-                <div class="search-row">
-                    <input id="globalSearch" type="text" placeholder="جستجوی هم‌پیمانان یا دیوان‌ها..." oninput="handleGlobalSearch()">
-                </div>
-
-                <div class="new-menu">
-                    <button onclick="openCreateModal('group')" title="ایجاد چت گروهی چندنفره">🛠 ساخت محفل (گروه)</button>
-                    <button onclick="openCreateModal('channel')" title="ایجاد کانال یکطرفه عمومی">📢 ساخت دیوان (کانال)</button>
-                </div>
-
-                <div class="chat-list" id="mainList">
-                    <div class="skeleton-row">
-                        <div class="skeleton skeleton-av"></div>
-                        <div class="skeleton-col">
-                            <div class="skeleton skeleton-line short"></div>
-                            <div class="skeleton skeleton-line medium"></div>
-                        </div>
-                    </div>
-                    <div class="skeleton-row">
-                        <div class="skeleton skeleton-av"></div>
-                        <div class="skeleton-col">
-                            <div class="skeleton skeleton-line short"></div>
-                            <div class="skeleton skeleton-line medium"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chat-panel" id="chatPanel">
-                <div class="chat-blank" id="chatBlank">
-                    <span>👑</span>
-                    <h2>به قلمرو فرمانروایی wiriper خوش آمدید</h2>
-                    <p>جهت آغاز مکاتبه، یکی از عمارت‌های خصوصی یا دیوان‌های عمومی را از زبانه راست برگزینید.</p>
-                </div>
-
-                <div class="chat-header" id="chatHeader" style="display:none;">
-                    <button class="back" onclick="closeChat()" title="بازگشت به عمارت‌ها" aria-label="بازگشت">➡️</button>
-                    <div class="h-info" onclick="openChatInfo()">
-                        <div class="h-name" id="hName">مخاطب سلطنتی</div>
-                        <div class="h-sub" id="hSub">بارگذاری وضعیت حضور...</div>
-                    </div>
-                    <button class="icon-btn" onclick="toggleChatMenu(event)" title="گزینه‌های پیشرفته عمارت" aria-label="گزینه‌ها">⋮</button>
-                    
-                    <div id="chatMenu" class="menu-pop" style="display:none; position:absolute; top:50px; left:16px; background:var(--panel2); border:1px solid rgba(212,168,50,0.2); border-radius:10px; padding:6px; z-index:100;">
-                        <button onclick="openBgModal()" style="display:block; width:100%; padding:8px 12px; text-align:right; background:none; color:var(--txt); font-size:12px;">🖼 پرده‌خوانی (پس‌زمینه)</button>
-                        <button id="giftBtn" onclick="openGiftModal()" style="display:block; width:100%; padding:8px 12px; text-align:right; background:none; color:var(--gold); font-size:12px;">🎁 پیشکش هدایا (تخصیص سکه)</button>
-                        <button class="danger" onclick="closeChat()" style="display:block; width:100%; padding:8px 12px; text-align:right; background:none; color:var(--danger); font-size:12px;">بستن عمارت</button>
-                    </div>
-                </div>
-
-                <div id="messages" class="messages"></div>
-
-                <div id="typingIndicator" class="typing-indicator">
-                    <span id="typingName">فرستنده</span> در حال کتابت فرامین... 
-                    <div class="typing-dots"><span></span><span></span><span></span></div>
-                </div>
-
-                <div id="inputBar" class="input-bar" style="display:none;">
-                    <input type="file" id="fileInput" accept="image/*,video/*,.pdf" style="display:none" onchange="handleFileSelect(event)">
-                    <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="ضمیمه کردن تصاویر و اسناد سلطنتی" aria-label="پیوست فایل">📎</button>
-                    <textarea id="msgInput" rows="1" placeholder="کتابت فرامین و ارسال پیام..." oninput="autoGrow(this); handleTyping()"></textarea>
-                    <button class="send-btn" onclick="sendMessage()" title="شلیک پیام" aria-label="ارسال">➤</button>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div id="onboardingModal" class="modal-bg">
-        <div class="modal onboarding-modal">
-            <h2>📜 راهنمای قدم‌به‌قدم قلمرو <button class="x" onclick="closeModal('onboardingModal')">✕</button></h2>
-            
-            <div class="onboarding-slide active" id="os1">
-                <div class="onboarding-graphic">🏰</div>
-                <div class="onboarding-title">مفهوم «عمارت‌ها»</div>
-                <div class="onboarding-desc">عمارت‌ها همان چت‌های خصوصی، امن و دو نفره شما با دیگر ساکنان قلمرو هستند که بر پایه پروتکل‌های فوق‌پایدار بنا شده‌اند.</div>
-                <button class="btn-main" onclick="nextOnboarding(2)">گام بعدی ⚔️</button>
-            </div>
-
-            <div class="onboarding-slide" id="os2">
-                <div class="onboarding-graphic">📢</div>
-                <div class="onboarding-title">دیوان‌های انتشار فرامین</div>
-                <div class="onboarding-desc">«دیوان» معادل کانال‌های عمومی و تریبون‌های بزرگ پادشاهی است. پادشاهان و لردها فرامین خود را در دیوان‌ها برای تمامی اهالی منتشر می‌کنند.</div>
-                <button class="btn-main" onclick="nextOnboarding(3)">گام بعدی ✨</button>
-            </div>
-
-            <div class="onboarding-slide" id="os3">
-                <div class="onboarding-graphic">🪙</div>
-                <div class="onboarding-title">مکانیزم مالی پیشکش و سکه</div>
-                <div class="onboarding-desc">با تبادل سکه در قالب «پیشکش»، رتبه کاربری دوستانتان را ارتقا داده یا با مصرف ۵۰۰ سکه خودتان به مقام والای پادشاهی دست یابید!</div>
-                <button class="btn-main" onclick="closeModal('onboardingModal')">متوجه شدم، ورود به قصر 👑</button>
-            </div>
-
-            <div class="onboarding-dots" style="margin-top:14px;">
-                <div class="onboarding-dot active" id="od1"></div>
-                <div class="onboarding-dot" id="od2"></div>
-                <div class="onboarding-dot" id="od3"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="creditModal" class="modal-bg">
-        <div class="modal">
-            <h2>🪙 خزانه سلطنتی شما <button class="x" onclick="closeModal('creditModal')">✕</button></h2>
-            <p style="text-align:center; font-size:18px; margin:14px 0;">موجودی فعلی شما: <span id="cmCredit" style="color:var(--gold); font-weight:900;">۵۰۰</span> سکه سلطنتی ⭐</p>
-            <button class="btn-main" onclick="secureAddCredits(100)">تأمین ۱۰۰ سکه از مالیات خزانه</button>
-        </div>
-    </div>
-
-    <div id="bgModal" class="modal-bg">
-        <div class="modal">
-            <h2>🖼 انتخاب پرده‌خوانی (پس‌زمینه) <button class="x" onclick="closeModal('bgModal')">✕</button></h2>
-            <div id="bgGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-top:10px;"></div>
-        </div>
-    </div>
-
-    <div id="myProfileModal" class="modal-bg">
-        <div class="modal">
-            <h2>👤 شناسنامه من <button class="x" onclick="closeModal('myProfileModal')">✕</button></h2>
-            <div class="field">
-                <label>لقب پادشاهی شما</label>
-                <input id="ppName" type="text">
-            </div>
-            <button class="btn-main" onclick="saveProfile()">ثبت و توشیح شناسنامه</button>
-        </div>
-    </div>
-
-    <div id="giftModal" class="modal-bg">
-        <div class="modal">
-            <h2>🎁 ارسال پیشکش سلطنتی <button class="x" onclick="closeModal('giftModal')">✕</button></h2>
-            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">از خزانه خود به پاس دوستی سکه پیشکش کنید:</p>
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;">
-                <button class="btn-main" style="background:rgba(212,168,50,0.1); color:var(--gold);" onclick="executeGift(50)">پیشکش ۵۰ سکه 👑</button>
-                <button class="btn-main" style="background:rgba(212,168,50,0.1); color:var(--gold);" onclick="executeGift(100)">پیشکش ۱۰۰ سکه 🏰</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="createChatModal" class="modal-bg">
-        <div class="modal">
-            <h2>🛠 ساخت سازه ارتباطی جدید <button class="x" onclick="closeModal('createChatModal')">✕</button></h2>
-            <div class="field">
-                <label id="lblCreateName">نام سازه</label>
-                <input id="cChatName" type="text" placeholder="نام را وارد کنید...">
-            </div>
-            <button class="btn-main" onclick="submitCreateChat()">بنا کردن سازه</button>
-        </div>
-    </div>
-
-    <div id="toast" class="toast-box">
-        <span id="toastIcon">👑</span>
-        <span id="toastTxt">فرمان با موفقیت ثبت شد</span>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, addDoc, updateDoc, collection, query, orderBy, limit, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // کانفیگ هسته فایربیس
-        const firebaseConfig = {
-            apiKey: "AIzaSyAs76-FakeKeyForArchitecturePurposeOnly",
-            authDomain: "wiriper-prime.firebaseapp.com",
-            projectId: "wiriper-prime",
-            storageBucket: "wiriper-prime.appspot.com",
-            messagingSenderId: "999888777",
-            appId: "1:999888777:web:safekey123"
-        };
-
-        const fApp = initializeApp(firebaseConfig);
-        const auth = getAuth(fApp);
-        const db = getFirestore(fApp);
-
-        // مدیریت وضعیت نرم‌افزار (Central Application State)
-        let ME = null;
-        let activeChatId = null;
-        let activeChat = null;
-        let currentTab = "chats";
-        let typingUnsub = null;
-        let messagesUnsub = null;
-        let userCache = {};
-        let antiHackTimestamp = 0; 
-
-        const $ = id => document.getElementById(id);
-
-        // ---------- INITIALIZATION ----------
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                $('splashScreen').classList.add('hide');
-            }, 2000);
-
-            // مانیتورینگ وضعیت اتصال شبکه بدون تعلیق کردن کل صفحه
-            window.addEventListener('offline', () => $('offlineOverlay').classList.add('show'));
-            window.addEventListener('online', () => $('offlineOverlay').classList.remove('show'));
-
-            // اینتگریشن دکمه‌های کیبورد جهت چت صریح و روان
-            $('msgInput').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-
-            // اینتگریشن کشیدن و رها کردن فایل (Drag & Drop) روی باکس پیام‌ها
-            const msgZone = $('messages');
-            msgZone.addEventListener('dragover', (e) => { e.preventDefault(); msgZone.classList.add('dragover'); });
-            msgZone.addEventListener('dragleave', () => msgZone.classList.remove('dragover'));
-            msgZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                msgZone.classList.remove('dragover');
-                if(e.dataTransfer.files.length > 0) {
-                    toast('فایل شناسایی شد. در حال آماده‌سازی پلتفرم آپلود...', '📎');
-                }
-            });
-        });
-
-        // ردیابی هوشمند نشست کاربر در دیتابیس
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    ME = userDoc.data();
-                    renderMeHeader();
-                    $('authScreen').style.display = 'none';
-                    $('app').style.display = 'block';
-                    loadChatList();
-                }
-            } else {
-                $('authScreen').style.display = 'flex';
-                $('app').style.display = 'none';
-            }
-        });
-
-        // ---------- SECURITY LAYER (FINANCIAL ANTI-EXPLOIT) ----------
-        window.secureAddCredits = async function(amount) {
-            const now = Date.now();
-            if (now - antiHackTimestamp < 3000) {
-                toast('سوءاستفاده از خزانه ردیابی شد! لطفاً ۳ ثانیه صبر کنید.', '⚠️');
-                return;
-            }
-            antiHackTimestamp = now;
-
-            if (amount > 500) {
-                toast('حداکثر تراکنش همزمان ۵۰۰ سکه است.', '❌');
-                return;
-            }
-
-            try {
-                await updateDoc(doc(db, 'users', ME.uid), { credits: increment(amount) });
-                ME.credits = (ME.credits || 0) + amount;
-                $('cmCredit').textContent = ME.credits;
-                toast(`+${amount} سکه به خزانه واریز شد`, '🪙');
-            } catch (e) {
-                toast('خطا در تراکنش امنیتی دیتابیس', '❌');
-            }
-        };
-
-        // ---------- ONBOARDING SYSTEM SLIDER ----------
-        window.nextOnboarding = function(slideNum) {
-            for(let i=1; i<=3; i++) {
-                $(`os${i}`).classList.remove('active');
-                $(`od${i}`).classList.remove('active');
-            }
-            $(`os${slideNum}`).classList.add('active');
-            $(`od${slideNum}`).classList.add('active');
-        };
-
-        // ---------- REGISTER AND LOGIN ----------
-        window.doRegister = async function() {
-            const name = $('rName').value.trim();
-            const username = $('rUser').value.trim().toLowerCase();
-            const pass = $('rPass').value;
-
-            if (!name || !username || !pass) return authMsg('پر کردن تمام فیلدها الزامی است.', 'err');
-            if (pass.length < 6) return authMsg('کلید امنیتی باید حداقل ۶ کاراکتر باشد.', 'err');
-
-            try {
-                authMsg('در حال پی‌ریزی قصر کاربری...', 'ok');
-                const taken = await getDoc(doc(db, 'usernames', username));
-                if (taken.exists()) return authMsg('این نام کاربری پیش‌تر تصرف شده است.', 'err');
-
-                const cred = await createUserWithEmailAndPassword(auth, `${username}@wiriper.prime`, pass);
-                const uid = cred.user.uid;
-
-                const newUser = {
-                    uid, username, displayName: name,
-                    credits: 500, isPremium: false,
-                    createdAt: serverTimestamp(), lastOnline: serverTimestamp()
-                };
-
-                await setDoc(doc(db, 'users', uid), newUser);
-                await setDoc(doc(db, 'usernames', username), { uid });
-
-                ME = newUser;
-                authMsg('تاج‌گذاری با موفقیت انجام شد!', 'ok');
-                
-                // نمایش مودال توضیحات کلیدواژه‌ها بلافاصله پس از اولین عضویت موفقیت‌آمیز
-                setTimeout(() => {
-                    openModal('onboardingModal');
-                }, 800);
-
-            } catch (e) {
-                authMsg(e.message, 'err');
-            }
-        };
-
-        window.doLogin = async function() {
-            const username = $('lUser').value.trim().toLowerCase();
-            const pass = $('lPass').value;
-            if(!username || !pass) return authMsg('مشخصات ورود را کامل وارد کنید.', 'err');
-
-            try {
-                authMsg('در حال گشودن دروازه‌های قصر...', 'ok');
-                await signInWithEmailAndPassword(auth, `${username}@wiriper.prime`, pass);
-            } catch(e) {
-                authMsg('نام کاربری یا کلید ورود نادرست است.', 'err');
-            }
-        };
-
-        window.doLogout = async function() {
-            await signOut(auth);
-            location.reload();
-        };
-
-        // ---------- MESSAGING ENGINE & IDEMPOTENCY LOCK ----------
-        window.sendMessage = async function() {
-            const text = $('msgInput').value.trim();
-            if (!text || !activeChatId) return;
-
-            $('msgInput').value = '';
-            $('msgInput').style.height = '38px';
-
-            // تولید شناسه کلاینت از پیش تعیین شده برای تضمین جلوگیری از دریافت پیام دوبل (Idempotency Key)
-            const clientMsgId = `msg_${ME.uid}_${Date.now()}`;
-            
-            const payload = {
-                id: clientMsgId,
-                senderId: ME.uid,
-                senderName: ME.displayName,
-                text: text,
-                createdAt: serverTimestamp(),
-                seen: false
-            };
-
-            try {
-                // با متد setDoc شناسه را فیکس می‌کنیم تا ارسال مجدد در شبکه ضعیف دابلیکیت ایجاد نکند
-                await setDoc(doc(db, 'chats', activeChatId, 'messages', clientMsgId), payload);
-                await updateDoc(doc(db, 'chats', activeChatId), {
-                    lastMessage: text,
-                    lastTime: serverTimestamp()
-                });
-            } catch (e) {
-                toast('خطا در پرتاب پیام به سرور', '❌');
-            }
-        };
-
-        // ---------- CORE REVENUE RENDERERS ----------
-        function renderMeHeader() {
-            $('meName').textContent = ME.isPremium ? `👑 ${ME.displayName}` : ME.displayName;
-            $('meId').textContent = `@${ME.username}`;
-            $('meAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${ME.username}`;
-            if(ME.isPremium) $('meAvatar').classList.add('premium');
-        }
-
-        async function loadChatList() {
-            // ساختار Listenerهای پویا با تفکیک واژگان بومی قلمرو
-            const q = query(collection(db, 'chats'), orderBy('lastTime', 'desc'), limit(40));
-            onSnapshot(q, async (snapshot) => {
-                const list = $('mainList');
-                list.innerHTML = '';
-                
-                if(snapshot.empty) {
-                    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">هیچ عمارتی یافت نشد.</div>';
-                    return;
-                }
-
-                snapshot.forEach(docSnap => {
-                    const c = docSnap.data();
-                    const id = docSnap.id;
-                    const div = document.createElement('div');
-                    div.className = `chat-item ${id === activeChatId ? 'active' : ''}`;
-                    div.onclick = () => openChat(id, c);
-
-                    let labelTag = c.type === 'group' ? 'محفل' : 'دیوان';
-                    let labelExplain = c.type === 'group' ? '(گروه عام)' : '(کانال فرامین)';
-
-                    div.innerHTML = `
-                        <div class="av">🏰</div>
-                        <div class="ci-main">
-                            <div class="ci-name">
-                                ${c.name} 
-                                <span class="tag">${labelTag}</span>
-                                <span class="subtitle-explain">${labelExplain}</span>
-                            </div>
-                            <div class="ci-last">${c.lastMessage || 'مکاتبه‌ای آغاز نشده است'}</div>
-                        </div>
-                    `;
-                    list.appendChild(div);
-                });
-            });
-        }
-
-        window.openChat = function(id, data) {
-            if(messagesUnsub) messagesUnsub();
-            activeChatId = id;
-            activeChat = data;
-
-            $('chatBlank').style.display = 'none';
-            $('chatHeader').style.display = 'flex';
-            $('inputBar').style.display = 'flex';
-            $('hName').textContent = data.name;
-            $('hSub').textContent = data.type === 'channel' ? 'دیوان رسمی انتشار اخبار' : 'محفل گفتگوی آنلاین اهالی قلمرو';
-
-            const msgQuery = query(collection(db, 'chats', id, 'messages'), orderBy('createdAt', 'asc'), limit(50));
-            messagesUnsub = onSnapshot(msgQuery, (snap) => {
-                const box = $('messages');
-                box.innerHTML = '';
-                snap.forEach(mDoc => {
-                    const m = mDoc.data();
-                    const isMe = m.senderId === ME.uid;
-                    const row = document.createElement('div');
-                    row.className = `msg-row ${isMe ? 'me' : ''}`;
-                    
-                    row.innerHTML = `
-                        <div class="msg-sender">${m.senderName}</div>
-                        <div class="bubble">
-                            <div>${m.text}</div>
-                            <div class="b-meta">✓✓</div>
-                        </div>
-                    `;
-                    box.appendChild(row);
-                });
-                // اسکرول کاملاً هوشمند به انتهای باکس چت بلافاصله پس از رندر هر پیام جدید
-                box.scrollTop = box.scrollHeight;
-            });
-
-            if(window.innerWidth <= 800) {
-                $('chatPanel').classList.add('open');
-            }
-        };
-
-        window.closeChat = function() {
-            activeChatId = null;
-            $('chatPanel').classList.remove('open');
-            $('chatBlank').style.display = 'flex';
-            $('chatHeader').style.display = 'none';
-            $('inputBar').style.display = 'none';
-        };
-
-        // ---------- SYSTEM MODALS CORE HANDLERS ----------
-        window.openModal = function(id) { $(id).classList.add('show'); };
-        window.closeModal = function(id) { $(id).classList.remove('show'); };
-        
-        window.toggleMainMenu = function(e) {
-            e.stopPropagation();
-            $('mainMenu').style.display = $('mainMenu').style.display === 'block' ? 'none' : 'block';
-        };
-        window.toggleChatMenu = function(e) {
-            e.stopPropagation();
-            $('chatMenu').style.display = $('chatMenu').style.display === 'block' ? 'none' : 'block';
-        };
-
-        document.addEventListener('click', () => {
-            $('mainMenu').style.display = 'none';
-            $('chatMenu').style.display = 'none';
-        });
-
-        // ---------- AUXILIARY INTERFACES ----------
-        let toastTimeout;
-        window.toast = function(txt, icon = '👑') {
-            clearTimeout(toastTimeout);
-            $('toastTxt').textContent = txt;
-            $('toastIcon').textContent = icon;
-            $('toast').classList.add('show');
-            toastTimeout = setTimeout(() => $('toast').classList.remove('show'), 2500);
-        };
-
-        function authMsg(txt, type) {
-            const m = $('authMsg');
-            m.textContent = txt;
-            m.className = `auth-msg show ${type}`;
-        }
-
-        window.autoGrow = function(el) {
-            el.style.height = '38px';
-            el.style.height = (el.scrollHeight) + 'px';
-        };
-
-        window.switchTab = function(type) {
-            if(type === 'login') {
-                $('loginForm').style.display = 'block';
-                $('regForm').style.display = 'none';
-                $('tabLogin').classList.add('active');
-                $('tabReg').classList.remove('active');
-            } else {
-                $('loginForm').style.display = 'none';
-                $('regForm').style.display = 'block';
-                $('tabLogin').classList.remove('active');
-                $('tabReg').classList.add('active');
-            }
-        };
-    </script>
+</div></div>
+
+<!-- MODALS (کامل از نسخه اول) -->
+<div id="onboardingModal" class="modal-bg"><div class="modal onboarding-modal"><h2>📜 راهنمای قدم‌به‌قدم قلمرو <button class="x" onclick="closeModal('onboardingModal')">✕</button></h2><div class="onboarding-slide active" id="os1"><div class="onboarding-graphic">🏰</div><div class="onboarding-title">مفهوم «عمارت‌ها»</div><div class="onboarding-desc">عمارت‌ها همان چت‌های خصوصی، امن و دو نفره شما با دیگر ساکنان قلمرو هستند که بر پایه پروتکل‌های فوق‌پایدار بنا شده‌اند.</div><button class="btn-main" onclick="nextOnboarding(2)">گام بعدی ⚔️</button></div><div class="onboarding-slide" id="os2"><div class="onboarding-graphic">📢</div><div class="onboarding-title">دیوان‌های انتشار فرامین</div><div class="onboarding-desc">«دیوان» معادل کانال‌های عمومی و تریبون‌های بزرگ پادشاهی است.</div><button class="btn-main" onclick="nextOnboarding(3)">گام بعدی ✨</button></div><div class="onboarding-slide" id="os3"><div class="onboarding-graphic">🪙</div><div class="onboarding-title">مکانیزم مالی پیشکش و سکه</div><div class="onboarding-desc">با تبادل سکه در قالب «پیشکش»، رتبه کاربری دوستانتان را ارتقا دهید.</div><button class="btn-main" onclick="closeModal('onboardingModal')">متوجه شدم، ورود به قصر 👑</button></div><div class="onboarding-dots"><div class="onboarding-dot active" id="od1"></div><div class="onboarding-dot" id="od2"></div><div class="onboarding-dot" id="od3"></div></div></div></div>
+
+<div id="myProfileModal" class="modal-bg"><div class="modal"><h2>شناسنامه من <button class="x" onclick="closeModal('myProfileModal')">✕</button></h2><div class="field"><label>لقب پادشاهی</label><input id="ppName" type="text"></div><div class="field"><label>حسب حال</label><textarea id="ppBio"></textarea></div><div class="credit-box" style="background:rgba(212,168,50,0.1); padding:8px; border-radius:12px; margin:10px 0;">⭐ <span id="ppCredit">0</span></div><button class="btn-main" onclick="saveProfile()">ثبت</button></div></div>
+<div id="premiumModal" class="modal-bg"><div class="modal"><h2>مقام پادشاهی 💎 <button class="x" onclick="closeModal('premiumModal')">✕</button></h2><div style="margin-bottom:16px;">👑 هاله طلایی<br>📜 فرمان سلطنتی<br>🚀 ارتقای دیوان</div><div class="credit-box">⭐ 500 سکه</div><button class="btn-main" onclick="buyPremium()">خرید</button></div></div>
+<div id="newGroupModal" class="modal-bg"><div class="modal"><h2>تأسیس محفل <button class="x" onclick="closeModal('newGroupModal')">✕</button></h2><div class="field"><label>نام</label><input id="grpName" type="text"></div><div id="grpMembers" style="max-height:180px; overflow-y:auto;"></div><button class="btn-main" onclick="createGroup()">بنیان‌گذاری</button></div></div>
+<div id="newChannelModal" class="modal-bg"><div class="modal"><h2>تأسیس دیوان <button class="x" onclick="closeModal('newChannelModal')">✕</button></h2><div class="field"><label>نام</label><input id="chName" type="text"></div><div class="field"><label>شرح</label><textarea id="chDesc"></textarea></div><button class="btn-main" onclick="createChannel()">بنیان‌گذاری</button></div></div>
+<div id="creditModal" class="modal-bg"><div class="modal"><h2>خزانه‌داری <button class="x" onclick="closeModal('creditModal')">✕</button></h2><div class="credit-box">⭐ <span id="cmCredit">0</span></div><button class="btn-main" onclick="secureAddCredits(100)">+۱۰۰ سکه (مالیات خزانه)</button></div></div>
+<div id="giftModal" class="modal-bg"><div class="modal"><h2>پیشکش <button class="x" onclick="closeModal('giftModal')">✕</button></h2><p>⭐ <span id="gmCredit">0</span></p><div class="gift-grid"><div class="gift-opt" onclick="sendGift('🌹',5)"><div class="ge">🌹</div><div class="gp">⭐5</div></div><div class="gift-opt" onclick="sendGift('💎',30)"><div class="ge">💎</div><div class="gp">⭐30</div></div><div class="gift-opt" onclick="sendGift('👑',50)"><div class="ge">👑</div><div class="gp">⭐50</div></div><div class="gift-opt" onclick="sendGift('🏰',250)"><div class="ge">🏰</div><div class="gp">⭐250</div></div></div></div></div>
+<div id="bgModal" class="modal-bg"><div class="modal"><h2>پرده‌خوانی <button class="x" onclick="closeModal('bgModal')">✕</button></h2><div id="bgGrid" class="bg-grid"></div></div></div>
+<div id="chatInfoModal" class="modal-bg"><div class="modal"><h2>اطلاعات عمارت <button class="x" onclick="closeModal('chatInfoModal')">✕</button></h2><div id="ciContent"></div></div></div>
+<div id="lightbox" onclick="if(event.target===this)closeLightbox()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:200; align-items:center; justify-content:center;"><button class="lb-close" onclick="closeLightbox()">✕</button><img id="lbImg" style="max-width:90%; max-height:85%;"></div>
+<div id="toast" class="toast-box"><span id="toastIcon">👑</span><span id="toastTxt">فرمان ثبت شد</span></div>
+
+<script type="module">
+// ادغام کامل قابلیت‌های نسخه اول با بهبودهای ظاهری نسخه دوم
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = { apiKey: "AIzaSyAZOVyp3r8rPsLHQDUOHsodNZA6BP_pEh0", authDomain: "messagerin.firebaseapp.com", projectId: "messagerin", storageBucket: "messagerin.firebasestorage.app", messagingSenderId: "1071488457159", appId: "1:1071488457159:web:56c84b88f196ccbed1a1e2", measurementId: "G-WN2SYBQN1W" };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let ME = null, activeChatId = null, activeChat = null, msgUnsub = null, chatsUnsub = null, typingUnsub = null, actionState = { type: null, id: null };
+let currentMainTab = 'chats', allMyChats = [], antiHackTimestamp = 0, isRoyalDecreeMode = false;
+const BACKGROUNDS = ['', 'linear-gradient(135deg,#1a1a24,#030305)', 'linear-gradient(135deg,#231610,#0a0502)', 'linear-gradient(135deg,#0a151b,#061015)', 'linear-gradient(135deg,#2e1a42,#110217)'];
+const $ = id => document.getElementById(id);
+
+function toast(t, icon='👑') { let el = $('toast'); $('toastTxt').innerText = t; $('toastIcon').innerText = icon; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800); }
+function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]); }
+function emailFor(u){ return u.toLowerCase()+"@wiriper.app"; }
+function timeStr(ts){ if(!ts) return ''; let d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}); }
+function privateChatId(a,b){ return [a,b].sort().join('_'); }
+
+// ---- توابع اصلی (ادغام شده از نسخه اول) ----
+window.switchTab = function(t){ $('tabLogin').classList.toggle('active',t==='login'); $('tabReg').classList.toggle('active',t==='reg'); $('loginForm').style.display=t==='login'?'block':'none'; $('regForm').style.display=t==='reg'?'block':'none'; };
+window.doRegister = async function(){ let name=$('rName').value.trim(), username=$('rUser').value.trim().toLowerCase(), pass=$('rPass').value; if(!name||!username||!pass) return toast('همه فیلدها پر کنید','⚠️'); if(pass.length<6) return toast('رمز حداقل ۶ کاراکتر','⚠️'); try{ let taken=await getDoc(doc(db,'usernames',username)); if(taken.exists()) return toast('نام کاربری تکراری','❌'); let cred=await createUserWithEmailAndPassword(auth, emailFor(username), pass); await setDoc(doc(db,'users',cred.user.uid),{uid:cred.user.uid,username,usernameLower:username,displayName:name,bio:'',photoURL:'',credits:500,isPremium:false,receivedGifts:[],giftScore:0,createdAt:serverTimestamp(),lastOnline:serverTimestamp()}); await setDoc(doc(db,'usernames',username),{uid:cred.user.uid}); toast('عضویت موفق!','✅'); setTimeout(()=>{ openModal('onboardingModal'); },800); }catch(e){ toast('خطا: '+e.message,'❌'); } };
+window.doLogin = async function(){ let username=$('lUser').value.trim().toLowerCase(), pass=$('lPass').value; if(!username||!pass) return toast('نام و رمز را وارد کنید','⚠️'); try{ await signInWithEmailAndPassword(auth, emailFor(username), pass); }catch(e){ toast('اطلاعات ورود اشتباه','❌'); } };
+window.doLogout = async function(){ if(confirm('خروج از قصر؟')){ await signOut(auth); location.reload(); } };
+onAuthStateChanged(auth, async(user)=>{ if(user){ let snap=await getDoc(doc(db,'users',user.uid)); if(snap.exists()){ ME=snap.data(); $('authScreen').style.display='none'; $('app').style.display='block'; renderMeHeader(); subscribeChats(); } }else{ $('authScreen').style.display='flex'; $('app').style.display='none'; } });
+function renderMeHeader(){ $('meName').innerHTML=ME.isPremium?'👑 '+ME.displayName:ME.displayName; $('meId').innerText='@'+ME.username; if(ME.isPremium) $('meAvatar').classList.add('premium'); else $('meAvatar').classList.remove('premium'); }
+window.toggleMainMenu = function(e){ e.stopPropagation(); let m=$('mainMenu'); m.style.display=m.style.display==='block'?'none':'block'; };
+window.toggleChatMenu = function(e){ e.stopPropagation(); let m=$('chatMenu'); m.style.display=m.style.display==='block'?'none':'block'; };
+document.addEventListener('click',()=>{ $('mainMenu').style.display='none'; $('chatMenu').style.display='none'; });
+window.openModal = id => $(id).classList.add('show');
+window.closeModal = id => $(id).classList.remove('show');
+window.secureAddCredits = async function(amount){ let now=Date.now(); if(now-antiHackTimestamp<2000){ toast('لطفاً اندکی صبر کنید','⏳'); return; } antiHackTimestamp=now; await updateDoc(doc(db,'users',ME.uid),{credits:increment(amount)}); ME.credits+=amount; $('cmCredit').innerText=ME.credits; toast(`+${amount} سکه به خزانه واریز شد`,'🪙'); };
+window.openCreditModal = function(){ $('cmCredit').innerText=ME.credits||0; openModal('creditModal'); };
+window.toggleRoyalAudio = function(){ let audio=$('royalAudio'); audio.paused?audio.play():audio.pause(); toast(audio.paused?'پخش متوقف شد':'سمفونی نهم در حال پخش','🎵'); };
+function subscribeChats(){ let q=query(collection(db,'chats'), where('members','array-contains',ME.uid)); chatsUnsub=onSnapshot(q,(snap)=>{ allMyChats=[]; snap.forEach(d=>allMyChats.push({id:d.id,...d.data()})); allMyChats.sort((a,b)=>(b.lastTime?.toMillis()||0)-(a.lastTime?.toMillis()||0)); if(currentMainTab==='chats') renderChatList(allMyChats); if(activeChatId){ let upd=allMyChats.find(c=>c.id===activeChatId); if(upd) { activeChat=upd; renderChatHeader(); checkJoinStatus(); checkPinnedMsg(); } } }); }
+async function renderChatList(chats,isDiscover=false){ let list=$('mainList'); list.innerHTML=''; if(!chats.length && !isDiscover){ list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">هیچ عمارتی یافت نشد</div>'; return; } for(let c of chats){ let meta=await chatDisplay(c); let div=document.createElement('div'); div.className=`chat-item ${c.id===activeChatId?'active':''}`; div.onclick=()=>openChat(c.id,c); let tag=c.type==='group'?'<span class="tag">محفل</span>':c.type==='channel'?'<span class="tag">دیوان</span>':''; let explain=c.type==='group'?'(گروه عام)':c.type==='channel'?'(کانال فرامین)':''; div.innerHTML=`<div class="av">${meta.icon}</div><div class="ci-main"><div class="ci-name">${esc(meta.name)} ${tag} <span class="subtitle-explain">${explain}</span></div><div class="ci-last">${esc(c.lastMessage||'مکاتبه‌ای آغاز نشده')}</div></div>`; list.appendChild(div); } }
+async function chatDisplay(c){ if(c.type==='private'){ let other=c.members.find(m=>m!==ME.uid); let u=await getUser(other); return {name:u.isPremium?'👑 '+u.displayName:u.displayName, icon:'👤', userData:u}; } return {name:c.name, icon:c.type==='channel'?'📢':'👥'}; }
+async function getUser(uid){ let cache={}; if(cache[uid]) return cache[uid]; let snap=await getDoc(doc(db,'users',uid)); if(snap.exists()){ cache[uid]=snap.data(); return cache[uid]; } return {displayName:'کاربر',username:''}; }
+window.openChat = async function(id,data){ activeChatId=id; activeChat=data; $('chatBlank').style.display='none'; $('chatHeader').style.display='flex'; $('inputBar').style.display='flex'; $('giftBtn').style.display=activeChat.type==='private'?'block':'none'; $('boostBtn').style.display=activeChat.type==='channel'?'block':'none'; cancelAction(); await renderChatHeader(); checkJoinStatus(); checkPinnedMsg(); subscribeMessages(id); subscribeTyping(id); if(window.innerWidth<=800) $('chatPanel').classList.add('open'); };
+window.closeChat = function(){ activeChatId=null; $('chatPanel').classList.remove('open'); $('chatBlank').style.display='flex'; $('chatHeader').style.display='none'; $('inputBar').style.display='none'; if(msgUnsub) msgUnsub(); if(typingUnsub) typingUnsub(); };
+async function renderChatHeader(){ let meta=await chatDisplay(activeChat); $('hName').innerHTML=meta.name; $('hSub').innerHTML=activeChat.type==='private'?'حضور آنلاین':activeChat.type==='group'?activeChat.members.length+' عضو':'دیوان عمومی'; }
+function checkJoinStatus(){ if(activeChat.type==='channel' && !activeChat.members.includes(ME.uid)){ $('inputBar').style.display='none'; $('joinBar').style.display='block'; }else{ $('joinBar').style.display='none'; $('inputBar').style.display='flex'; } }
+function checkPinnedMsg(){ if(activeChat?.pinnedMsg){ $('pinnedBar').style.display='block'; $('pinnedText').innerText=activeChat.pinnedMsg.text; }else $('pinnedBar').style.display='none'; }
+window.joinCurrentChannel = async function(){ await updateDoc(doc(db,'chats',activeChatId),{members:arrayUnion(ME.uid)}); activeChat.members.push(ME.uid); checkJoinStatus(); toast('به دیوان پیوستید','✅'); };
+function subscribeMessages(chatId){ if(msgUnsub) msgUnsub(); let q=query(collection(db,'chats',chatId,'messages'), orderBy('createdAt','asc'), limit(300)); msgUnsub=onSnapshot(q,(snap)=>{ let box=$('messages'); let wasBottom=box.scrollHeight-box.scrollTop<=box.clientHeight+100; box.innerHTML=''; snap.forEach(d=>{ let m=d.data(); let mine=m.senderId===ME.uid; let row=document.createElement('div'); row.className=`msg-row ${mine?'me':''}`; row.innerHTML=`<div class="msg-sender">${m.senderName}</div><div class="bubble"><div>${esc(m.text||'')}</div><div class="b-meta">${timeStr(m.createdAt)} ${mine?'<span class="tick seen">✓✓</span>':''}</div></div>`; box.appendChild(row); }); if(wasBottom) box.scrollTop=box.scrollHeight; }); }
+function subscribeTyping(chatId){ if(typingUnsub) typingUnsub(); typingUnsub=onSnapshot(doc(db,'chats',chatId,'typing','status'),(snap)=>{ if(snap.exists() && snap.data().users?.filter(u=>u!==ME.uid).length) $('typingIndicator').classList.add('show'); else $('typingIndicator').classList.remove('show'); }); }
+window.handleTyping = function(){ if(!activeChatId) return; updateDoc(doc(db,'chats',activeChatId,'typing','status'),{users:arrayUnion(ME.uid)}).catch(()=>{}); clearTimeout(window._ty); window._ty=setTimeout(()=>{ updateDoc(doc(db,'chats',activeChatId,'typing','status'),{users:arrayRemove(ME.uid)}); },2000); };
+window.sendMessage = async function(){ let text=$('msgInput').value.trim(); if(!text||!activeChatId) return; $('msgInput').value=''; autoGrow($('msgInput')); let payload={type:'text',text,isRoyalDecree:isRoyalDecreeMode && ME.isPremium}; if(actionState.type==='reply') payload.replyTo={id:actionState.id,sender:'',text:''}; cancelAction(); let docRef=await addDoc(collection(db,'chats',activeChatId,'messages'),{senderId:ME.uid,senderName:ME.displayName,senderIsPremium:ME.isPremium||false,createdAt:serverTimestamp(),...payload}); await updateDoc(doc(db,'chats',activeChatId),{lastMessage:text.slice(0,40),lastTime:serverTimestamp()}); updateDoc(doc(db,'chats',activeChatId,'typing','status'),{users:arrayRemove(ME.uid)}); };
+window.autoGrow = function(el){ el.style.height='38px'; el.style.height=Math.min(el.scrollHeight,110)+'px'; };
+window.cancelAction = function(){ actionState={type:null,id:null}; $('actionBanner').style.display='none'; };
+window.openCreateModal = function(type){ if(type==='group') openModal('newGroupModal'); else openModal('newChannelModal'); };
+window.createGroup = async function(){ let name=$('grpName').value.trim(); if(!name) return toast('نام وارد شود','⚠️'); let members=[ME.uid]; let ref=await addDoc(collection(db,'chats'),{type:'group',name,owner:ME.uid,members,lastMessage:'محفل دایر شد',lastTime:serverTimestamp(),background:''}); closeModal('newGroupModal'); toast('محفل ساخته شد','✔'); openChat(ref.id); };
+window.createChannel = async function(){ let name=$('chName').value.trim(); if(!name) return toast('نام وارد شود','⚠️'); let ref=await addDoc(collection(db,'chats'),{type:'channel',name,owner:ME.uid,members:[ME.uid],lastMessage:'دیوان دایر شد',lastTime:serverTimestamp(),background:''}); closeModal('newChannelModal'); toast('دیوان ساخته شد','✔'); openChat(ref.id); };
+window.openGiftModal = function(){ $('gmCredit').innerText=ME.credits||0; openModal('giftModal'); };
+window.sendGift = async function(emoji,value){ if((ME.credits||0)<value) return toast('اعتبار کافی نیست','⚠️'); let targetUid=activeChat?.members?.find(m=>m!==ME.uid); if(!targetUid && activeChat?.type!=='channel') return toast('گیرنده مشخص نیست','❌'); await updateDoc(doc(db,'users',ME.uid),{credits:increment(-value)}); if(targetUid) await updateDoc(doc(db,'users',targetUid),{credits:increment(value),giftScore:increment(value),receivedGifts:arrayUnion({emoji,sender:ME.displayName,value})}); ME.credits-=value; await addDoc(collection(db,'chats',activeChatId,'messages'),{type:'gift',gift:emoji,giftValue:value,senderId:ME.uid,senderName:ME.displayName,createdAt:serverTimestamp()}); closeModal('giftModal'); toast(`پیشکش ${emoji} ارسال شد`,'🎁'); };
+window.openBgModal = function(){ let grid=$('bgGrid'); grid.innerHTML=''; BACKGROUNDS.forEach(bg=>{ let d=document.createElement('div'); d.className='bg-opt'+(activeChat?.background===bg?' sel':''); d.style.background=bg||'var(--bg2)'; d.onclick=()=>setBackground(bg); grid.appendChild(d); }); openModal('bgModal'); };
+window.setBackground = async function(bg){ await updateDoc(doc(db,'chats',activeChatId),{background:bg}); if(activeChat) activeChat.background=bg; $('messages').style.backgroundImage=bg||''; closeModal('bgModal'); toast('پس‌زمینه تغییر کرد','🖼️'); };
+window.openMyProfile = function(){ $('ppName').value=ME.displayName; $('ppBio').value=ME.bio||''; $('ppCredit').innerText=ME.credits||0; openModal('myProfileModal'); };
+window.saveProfile = async function(){ let name=$('ppName').value.trim(), bio=$('ppBio').value; if(!name) return toast('نام خالی','⚠️'); await updateDoc(doc(db,'users',ME.uid),{displayName:name,bio}); ME.displayName=name; ME.bio=bio; renderMeHeader(); toast('پروفایل ذخیره شد','✔'); closeModal('myProfileModal'); };
+window.openPremiumModal = function(){ if(ME.isPremium) return toast('شما پادشاه هستید','👑'); openModal('premiumModal'); };
+window.buyPremium = async function(){ if((ME.credits||0)<500) return toast('اعتبار کافی نیست','⚠️'); await updateDoc(doc(db,'users',ME.uid),{credits:increment(-500),isPremium:true}); ME.credits-=500; ME.isPremium=true; closeModal('premiumModal'); toast('ارتقا یافتید! 👑','🎉'); renderMeHeader(); };
+window.boostChannel = async function(){ if(activeChat?.type!=='channel') return; if((ME.credits||0)<50) return toast('نیاز به ۵۰ سکه','⚠️'); await updateDoc(doc(db,'users',ME.uid),{credits:increment(-50)}); await updateDoc(doc(db,'chats',activeChatId),{boosts:increment(1)}); ME.credits-=50; toast('دیوان ارتقا یافت! 🚀','⚡'); };
+window.switchMainTab = function(tab){ currentMainTab=tab; $('btnTabChats').classList.toggle('active',tab==='chats'); $('btnTabDiscover').classList.toggle('active',tab==='discover'); $('btnTabLeaders').classList.toggle('active',tab==='leaders'); if(tab==='chats') renderChatList(allMyChats); else if(tab==='discover') loadDiscover(); else loadLeaders(); };
+async function loadDiscover(){ let q=query(collection(db,'chats'), where('type','==','channel'), limit(30)); let snap=await getDocs(q); let channels=[]; snap.forEach(d=>channels.push({id:d.id,...d.data()})); renderChatList(channels,true); }
+async function loadLeaders(){ let q=query(collection(db,'users'), orderBy('giftScore','desc'), limit(20)); let snap=await getDocs(q); let list=$('mainList'); list.innerHTML=''; snap.forEach(d=>{ let u=d.data(); let div=document.createElement('div'); div.className='chat-item'; div.innerHTML=`<div class="av">👑</div><div class="ci-main"><div class="ci-name">${esc(u.displayName)}</div><div class="ci-last">⭐ ${u.giftScore||0}</div></div>`; list.appendChild(div); }); }
+window.handleGlobalSearch = async function(){ let term=$('globalSearch').value.trim().toLowerCase(); if(!term) return switchMainTab(currentMainTab); let q=query(collection(db,'users'), where('usernameLower','>=',term), where('usernameLower','<=',term+'\uf8ff'), limit(10)); let snap=await getDocs(q); let list=$('mainList'); list.innerHTML=''; snap.forEach(d=>{ let u=d.data(); if(u.uid===ME.uid) return; let div=document.createElement('div'); div.className='chat-item'; div.onclick=()=>openOrCreatePrivate(u.uid,u); div.innerHTML=`<div class="av">👤</div><div class="ci-main"><div class="ci-name">${esc(u.displayName)}</div><div class="ci-last">@${esc(u.username)}</div></div>`; list.appendChild(div); }); };
+async function openOrCreatePrivate(otherUid,otherData){ let cid=privateChatId(ME.uid,otherUid); let ref=doc(db,'chats',cid); let snap=await getDoc(ref); if(!snap.exists()) await setDoc(ref,{type:'private',members:[ME.uid,otherUid].sort(),lastMessage:'',lastTime:serverTimestamp(),background:''}); openChat(cid); }
+window.nextOnboarding = function(num){ for(let i=1;i<=3;i++){ $(`os${i}`).classList.remove('active'); $(`od${i}`).classList.remove('active'); } $(`os${num}`).classList.add('active'); $(`od${num}`).classList.add('active'); };
+window.clearActiveChat = function(){ activeChatId=null; activeChat=null; if(msgUnsub) msgUnsub(); $('activeChat').style.display='none'; $('emptyChat').style.display='flex'; $('chatPanel').classList.remove('open'); };
+window.scrollToPinned = function(){};
+window.openChatInfo = function(){ toast('اطلاعات عمارت در حال تکمیل','ℹ️'); };
+window.handleFileSelect = function(e){ toast('ارسال فایل به زودی فعال میشود','📎'); };
+$('msgInput').addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
+let touchStartX=0; document.addEventListener('touchstart',e=>{ touchStartX=e.touches[0].clientX; },{passive:true}); document.addEventListener('touchend',e=>{ if(!activeChatId) return; let diff=e.changedTouches[0].clientX-touchStartX; if(Math.abs(diff)>80 && diff>0 && window.innerWidth<=800) closeChat(); });
+console.log('👑 Wiriper Prime v4.0 Ultimate');
+</script>
 </body>
 </html>
