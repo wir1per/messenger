@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="css/advanced-chat.css">
     <link rel="stylesheet" href="css/loading-quality.css">
     <link rel="stylesheet" href="css/production-polish.css">
-    <!-- Removed hotfix files as corrections are now built in -->
+    <!-- Retired hotfix files; all fixes now integrated -->
 
     <title>Wiriper Prime | پیام‌رسان سلطنتی</title>
     <style>
@@ -323,7 +323,6 @@
         .icon-btn:hover { background: rgba(232,195,114,0.12); border-color: var(--gold2); box-shadow: var(--gold-glow); transform: rotate(90deg); }
 
         /* Tabs & Search */
-        /* ---- FIX: Main tabs buttons now flex with centered icon+text ---- */
         .main-tabs { display: flex; padding: 7px 12px; gap: 5px; background: var(--bg2); border-bottom: 1px solid rgba(255,255,255,0.025); }
         .main-tabs button {
             flex: 1;
@@ -331,7 +330,7 @@
             background: transparent;
             color: var(--muted);
             border-radius: 11px;
-            font-size: 13px;          /* increased from 11px */
+            font-size: 13px;
             font-weight: 800;
             transition: var(--transition-smooth);
             display: flex;
@@ -340,15 +339,8 @@
             gap: 6px;
             white-space: nowrap;
         }
-        .main-tabs button:hover {
-            background: rgba(255,255,255,0.025);
-            color: var(--txt);
-        }
-        .main-tabs button.active {
-            background: rgba(232,195,114,0.08);
-            color: var(--gold2);
-            box-shadow: inset 0 0 6px rgba(232,195,114,0.06);
-        }
+        .main-tabs button:hover { background: rgba(255,255,255,0.025); color: var(--txt); }
+        .main-tabs button.active { background: rgba(232,195,114,0.08); color: var(--gold2); box-shadow: inset 0 0 6px rgba(232,195,114,0.06); }
         .search-row { padding: 10px 14px; background: var(--bg2); }
         .search-row input { width: 100%; padding: 11px 16px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.03); border-radius: 20px; color: var(--txt); font-size: 12px; text-align: right; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3); transition: var(--transition-smooth); }
         .search-row input:focus { border-color: var(--gold2); background: rgba(0,0,0,0.7); box-shadow: 0 0 12px rgba(232,195,114,0.1), inset 0 2px 6px rgba(0,0,0,0.4); }
@@ -490,23 +482,24 @@
         .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(60px) scale(0.86); background: rgba(14,17,26,0.97); color: #fff; padding: 11px 24px; border-radius: 20px; font-size: 13px; font-weight: 800; z-index: 200; border: 1px solid var(--gold2); opacity: 0; transition: all 0.32s cubic-bezier(0.2,0.8,0.2,1); box-shadow: 0 7px 22px rgba(0,0,0,0.5), var(--gold-glow); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: flex; align-items: center; gap: 7px; pointer-events: none; }
         .toast.show { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 
-        /* ---- FIX: Dropdown menu – larger, bolder, fully isolated ---- */
+        /* ---- FIXED: Dropdown menus now completely isolated, frosted glass, no background bleed ---- */
         .menu-pop {
             position: absolute;
             top: 60px;
             left: 14px;
-            background: rgba(10, 10, 20, 0.98);  /* darker, more opaque */
+            background: rgba(10, 10, 20, 0.98);   /* near-opaque deep dark */
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: var(--radius-lg);
             padding: 10px;
-            z-index: 60;                    /* higher than sidebar (10) and chat panel (30) */
+            z-index: 60;                          /* higher than everything else */
             display: none;
             min-width: 220px;
             max-width: calc(100vw - 28px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.7);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(232,195,114,0.2);
+            backdrop-filter: blur(30px);          /* strong blur to hide everything behind */
+            -webkit-backdrop-filter: blur(30px);
             animation: popIn 0.25s cubic-bezier(0.2,0.8,0.2,1);
+            overflow: hidden;                    /* ensure no child overflow */
         }
         .menu-pop button {
             display: flex;
@@ -518,7 +511,7 @@
             background: none;
             color: var(--txt);
             border-radius: 12px;
-            font-size: 15px;               /* larger, readable Persian */
+            font-size: 15px;
             font-weight: 700;
             transition: var(--transition-fast);
             margin-bottom: 2px;
@@ -565,7 +558,6 @@
             .auth-card { padding: 22px 14px; border-radius: var(--radius-lg); }
             .splash-crown { font-size: 55px; }
             .splash-title { font-size: 28px; }
-            /* Keep main tabs readable on mobile */
             .main-tabs button { font-size: 12px; gap: 4px; padding: 8px 4px; }
         }
         @media(max-width:420px) {
@@ -577,7 +569,7 @@
             .av { width: 36px; height: 36px; font-size: 15px; }
             .ci-name { font-size: 11px; }
             .ci-last { font-size: 10px; }
-            .main-tabs button { font-size: 11px; gap: 3px; padding: 6px 2px; }  /* still readable */
+            .main-tabs button { font-size: 11px; gap: 3px; padding: 6px 2px; }
             .search-row input { padding: 9px 12px; font-size: 11px; }
             .input-bar { padding: 5px 8px; padding-bottom: max(5px, var(--safe-bottom)); gap: 4px; }
             .input-bar textarea { min-height: 34px; font-size: 11px; padding: 6px 10px; }
@@ -594,7 +586,6 @@
             .auth-logo h1 { font-size: 24px; }
             .auth-tabs button { font-size: 10px; padding: 8px; }
             .field input, .field textarea { padding: 10px 12px; font-size: 12px; }
-            /* Dropdown menu also scales down slightly */
             .menu-pop button { font-size: 14px; padding: 10px 14px; }
         }
         @media(max-width:360px) {
@@ -1046,7 +1037,7 @@
             $('btnRoyalDecree').style.display = ME.isPremium ? 'flex' : 'none'; }
         window.toggleMenu = function(e) { e.stopPropagation();
             const m = $('mainMenu');
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };  /* changed to flex */
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
         window.toggleChatMenu = function(e) { e.stopPropagation();
             const m = $('chatMenu');
             m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; };
