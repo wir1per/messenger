@@ -1,0 +1,50 @@
+
+/* Mobile emergency fixes */
+
+@media (max-width:768px){
+  header,.chat-header,.conversation-header{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    flex-wrap:nowrap !important;
+    overflow:hidden !important;
+  }
+
+  .chat-header .avatar,
+  .chat-header img{
+    max-width:42px !important;
+    max-height:42px !important;
+  }
+
+  .profile-card,
+  .user-card,
+  .identity-card{
+    position:relative !important;
+    z-index:auto !important;
+  }
+
+  .composer,
+  .message-input,
+  .chat-composer{
+    bottom:0 !important;
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 6px) !important;
+  }
+
+  body,
+  .app,
+  .app-shell,
+  .main-content{
+    min-height:100dvh !important;
+  }
+
+  .wc-floating-surface::after{
+    display:none !important;
+  }
+}
+
+/* Prevent accidental overlay layers */
+.wc-command-backdrop,
+.wc-lightbox,
+.wc-dropzone{
+  z-index:99999;
+}
