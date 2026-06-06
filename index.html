@@ -9,8 +9,7 @@
     <meta name="description" content="Wiriper — پیام‌رسان لوکس و هوشمند">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
     <title>Wiriper | شبکه خصوصی</title>
-    <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js"></script>
     <style>
         :root {
             --bg: #0a0606;
@@ -2066,18 +2065,21 @@
                 <button id="tabLogin" class="active" onclick="switchTab('login')">اتصال</button>
                 <button id="tabReg" onclick="switchTab('reg')">ایجاد هویت</button>
             </div>
+    
             <div id="loginForm">
                 <div class="field"><label>شناسه کاربری</label><input id="lUser" type="text" placeholder="نام‌کاربری" autocomplete="off"></div>
                 <div class="field"><label>کد امنیتی</label><input id="lPass" type="password" placeholder="••••••••"></div>
                 <button class="btn-main" onclick="doLogin()">احراز هویت</button>
             </div>
             <div id="regForm" style="display:none;">
-                <div class="field"><label>نام نمایشی</label><input id="rName" type="text" placeholder="نام شما" autocomplete="off"></div>
+   
+             <div class="field"><label>نام نمایشی</label><input id="rName" type="text" placeholder="نام شما" autocomplete="off"></div>
                 <div class="field"><label>شناسه (انگلیسی)</label><input id="rUser" type="text" placeholder="username" autocomplete="off"></div>
                 <div class="field"><label>کد امنیتی (حداقل ۶ کاراکتر)</label><input id="rPass" type="password" placeholder="••••••••"></div>
                 <button class="btn-main" onclick="doRegister()">ثبت در شبکه</button>
             </div>
-            <div id="authMsg" class="auth-msg"></div>
+  
+          <div id="authMsg" class="auth-msg"></div>
             <div id="offlineOverlay">
                 <div class="offline-icon">📡</div>
                 <div class="offline-text">ارتباط با سرور شبکه مقدور نیست</div>
@@ -2095,80 +2097,97 @@
                         <div id="meName" class="me-name">...</div>
                         <div id="meId" class="me-id">@...</div>
                     </div>
-                    <button class="icon-btn" id="mainMenuBtn" onclick="toggleMenu(event)" aria-label="منو">💠</button>
+     
+               <button class="icon-btn" id="mainMenuBtn" onclick="toggleMenu(event)" aria-label="منو">💠</button>
                     <div id="mainMenu" class="menu-pop">
                         <button onclick="openMyProfile()">👤 پروفایل کاربری</button>
                         <button onclick="openPremiumModal()" style="color:var(--gold)">💎 ارتقا به پنل ویژه</button>
-                        <button onclick="openCreditModal()">⭐ کیف پول دیجیتال</button>
+  
+                      <button onclick="openCreditModal()">⭐ کیف پول دیجیتال</button>
                         <button onclick="openAIAssistant()">🤖 دستیار هوش مصنوعی</button>
                         <button class="danger" onclick="doLogout()">🚪 قطع اتصال</button>
-                    </div>
+                  
+    </div>
                 </div>
                 <div class="search-row"><input id="globalSearch" type="text" placeholder="جستجو در شبکه..." oninput="onSearchInput()"></div>
                 <div class="main-tabs">
                     <button id="tabChats" class="active" onclick="switchMainTab('chats')">💬 گفتگوها</button>
-                    <button id="tabDiscover" onclick="switchMainTab('discover')">🌍 دیسکاور</button>
+                  
+    <button id="tabDiscover" onclick="switchMainTab('discover')">🌍 دیسکاور</button>
                     <button id="tabLeaders" onclick="switchMainTab('leaders')">🏆 برترین‌ها</button>
                 </div>
                 <div class="new-menu" id="newMenuControls">
                     <button onclick="openModal('newGroupModal');loadMemberPicker('group')">➕ گروه</button>
-                    <button onclick="openModal('newChannelModal')">📢 چنل</button>
+                
+    <button onclick="openModal('newChannelModal')">📢 چنل</button>
                 </div>
                 <div class="list-title" id="listTitle">اتصالات شما</div>
                 <div id="mainList" class="chat-list"></div>
             </div>
             <div id="chatPanel" class="chat-panel">
-                <div id="emptyChat" class="empty-chat">
+               
+ <div id="emptyChat" class="empty-chat">
                     <div class="big">🛰️</div>
                     <div class="empty-title">یک اتصال انتخاب کنید</div>
                     <div class="empty-sub">برای شروع ارتباط، روی یک پروفایل کلیک کنید</div>
                 </div>
-                <div id="activeChat" style="display:none;flex-direction:column;height:100%;">
+        
+        <div id="activeChat" style="display:none;flex-direction:column;height:100%;">
                     <div class="chat-header">
                         <button class="back" onclick="closeChat()">➤</button>
                         <div id="hAv" class="h-av" onclick="openChatInfo()"></div>
-                        <div class="h-info" onclick="openChatInfo()">
+                
+        <div class="h-info" onclick="openChatInfo()">
                             <div id="hName" class="h-name">...</div>
                             <div id="hSub" class="h-sub">...</div>
                         </div>
-                        <div class="call-actions" id="callActionsBar">
+      
+                  <div class="call-actions" id="callActionsBar">
                             <button class="call-btn" onclick="showMockModal('📞 تماس صوتی امن...')" title="تماس">📞</button>
                             <button class="call-btn" onclick="showMockModal('📹 ارتباط تصویری...')" title="تصویری">📹</button>
-                        </div>
+             
+           </div>
                         <button class="icon-btn" style="width:36px;height:36px;border-radius:12px;" onclick="toggleChatMenu(event)" aria-label="منوی چت">⋮</button>
                         <div id="chatMenu" class="menu-pop">
                             <button onclick="openBgModal()">🖼 تمپلیت پس‌زمینه</button>
                             <button id="giftBtn" onclick="openGiftModal()">🎁 ارسال دارایی</button>
-                            <button id="boostBtn" style="display:none" onclick="boostChannel()">🚀 ارتقای کانال</button>
+         
+                   <button id="boostBtn" style="display:none" onclick="boostChannel()">🚀 ارتقای کانال</button>
                             <button class="danger" onclick="clearActiveChat()">بستن گفتگو</button>
                         </div>
                     </div>
-                    <div id="pinnedBar" class="pinned-bar" onclick="scrollToPinned()">
+ 
+                   <div id="pinnedBar" class="pinned-bar" onclick="scrollToPinned()">
                         <div class="p-title">📌 پین شده</div>
                         <div class="p-text" id="pinnedText">...</div>
                     </div>
-                    <div id="typingIndicator" class="typing-indicator">
+     
+               <div id="typingIndicator" class="typing-indicator">
                         <span id="typingName"></span> در حال تایپ...
                         <div class="typing-dots"><span></span><span></span><span></span></div>
                     </div>
-                    <div id="messages" class="messages"></div>
+          
+          <div id="messages" class="messages"></div>
                     <div id="joinBar" class="join-bar" style="display:none;">
                         <button class="btn-main" style="max-width:300px;margin:0 auto;" onclick="joinCurrentChannel()">پیوستن به کانال</button>
                     </div>
                     <div id="actionBanner" class="action-banner">
                         <div class="a-icon" id="abIcon">✏️</div>
                         <div class="a-content"><div class="a-title" id="abTitle">ویرایش</div><div class="a-txt" id="abText">...</div></div>
-                        <button class="close-btn" onclick="cancelAction()">✕</button>
+ 
+                       <button class="close-btn" onclick="cancelAction()">✕</button>
                     </div>
                     <div id="inputBar" class="input-bar">
                         <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
-                        <button class="action-btn" onclick="document.getElementById('imageInput').click()" title="ارسال تصویر">🖼️</button>
+    
+                    <button class="action-btn" onclick="document.getElementById('imageInput').click()" title="ارسال تصویر">🖼️</button>
                         <button class="action-btn" id="btnRoyalDecree" onclick="toggleRoyalDecree()" style="display:none;color:var(--gold);" title="فرمان سیستمی">📜</button>
                         <textarea id="msgInput" rows="1" placeholder="پیام خود را بنویسید..." oninput="autoGrow(this);handleTyping()"></textarea>
                         <button class="send-btn" onclick="sendMessage()">➤</button>
                     </div>
                 </div>
-            </div>
+      
+      </div>
         </div>
     </div>
 
@@ -2181,7 +2200,8 @@
     <div id="newGroupModal" class="modal-bg"><div class="modal"><h2>ایجاد گروه <button class="x" onclick="closeModal('newGroupModal')">✕</button></h2><div class="field"><label>نام گروه</label><input id="grpName" type="text" placeholder="مثال: تیم آلفا"></div><div class="field"><label>افزودن اعضا</label><div id="grpMembers" style="max-height:200px;overflow-y:auto;border:1px solid rgba(191,160,85,0.15);border-radius:18px;padding:10px;background:rgba(0,0,0,0.4);"></div></div><button class="btn-main" onclick="createGroup()">تأیید و ساخت</button></div></div>
     <div id="newChannelModal" class="modal-bg"><div class="modal"><h2>ایجاد چنل <button class="x" onclick="closeModal('newChannelModal')">✕</button></h2><div class="field"><label>نام چنل</label><input id="chName" type="text" placeholder="نام کانال شما"></div><div class="field"><label>توضیحات</label><textarea id="chDesc" placeholder="توضیح کوتاه..."></textarea></div><button class="btn-main" onclick="createChannel()">ساخت کانال</button></div></div>
 
-    <div id="creditModal" class="modal-bg"><div class="modal"><h2>کیف پول <button class="x" onclick="closeModal('creditModal')">✕</button></h2><div class="credit-box">⭐ <span id="cmCredit">0</span></div><p style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center;">شارژ هدیه آزمایشی:</p><button class="btn-main" style="background:rgba(191,160,85,0.08);border:1px solid var(--gold);color:var(--txt)" onclick="addCredits(300)">+۳۰۰ سکه دریافت کنید</button></div></div>
+  
+   <div id="creditModal" class="modal-bg"><div class="modal"><h2>کیف پول <button class="x" onclick="closeModal('creditModal')">✕</button></h2><div class="credit-box">⭐ <span id="cmCredit">0</span></div><p style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center;">شارژ هدیه آزمایشی:</p><button class="btn-main" style="background:rgba(191,160,85,0.08);border:1px solid var(--gold);color:var(--txt)" onclick="buyCoins(1)">+۳۰۰ سکه دریافت کنید</button></div></div>
     <div id="giftModal" class="modal-bg"><div class="modal" style="max-width:500px"><h2>ارسال دارایی <button class="x" onclick="closeModal('giftModal')">✕</button></h2><p style="font-size:14px;color:var(--txt);margin-bottom:16px;text-align:center;background:rgba(191,160,85,0.12);padding:12px;border-radius:16px;border:1px solid var(--gold);font-weight:900;">⭐ <span id="gmCredit">0</span> موجودی شما</p><div class="gift-grid"><div class="gift-opt" onclick="sendGift('🌹',5)"><div class="ge">🌹</div><div class="gp">⭐5</div></div><div class="gift-opt" onclick="sendGift('🍺',10)"><div class="ge">🍺</div><div class="gp">⭐10</div></div><div class="gift-opt" onclick="sendGift('💍',20)"><div class="ge">💍</div><div class="gp">⭐20</div></div><div class="gift-opt" onclick="sendGift('💎',30)"><div class="ge">💎</div><div class="gp">⭐30</div></div><div class="gift-opt" onclick="sendGift('💠',50)"><div class="ge">💠</div><div class="gp">⭐50</div></div><div class="gift-opt" onclick="sendGift('🚀',75)"><div class="ge">🚀</div><div class="gp">⭐75</div></div></div></div></div>
 
     <div id="bgModal" class="modal-bg"><div class="modal"><h2>تمپلیت‌های شبکه <button class="x" onclick="closeModal('bgModal')">✕</button></h2><div class="bg-grid" id="bgGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"></div></div></div>
@@ -2197,8 +2217,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, limit, increment, arrayUnion, arrayRemove, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, limit, increment, arrayUnion, arrayRemove, deleteDoc, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyAZOVyp3r8rPsLHQDUOHsodNZA6BP_pEh0",
             authDomain: "messagerin.firebaseapp.com",
@@ -2215,7 +2235,8 @@
         // ImgBB API key for image uploads (profile & chat images)
         const IMGBB_API_KEY = '39ff6b8fa6551faed4ba25549faf1211';
         // DeepSeek API proxy endpoint - in production, replace with your secure backend URL
-        const AI_PROXY_URL = '/api/deepseek'; // Points to a serverless function or backend
+        const AI_PROXY_URL = '/api/deepseek';
+        // Points to a serverless function or backend
 
         // Twemoji parsing
         function twemojiParse(element) {
@@ -2243,6 +2264,7 @@
         let pendingAuthUser = null;
         let offlineDetected = false;
         let lastMessageDates = {};
+        
         const BACKGROUNDS = ['', 'linear-gradient(135deg,#0a0606,#1a0808)', 'linear-gradient(135deg,#0d0808,#1a0a0a)', 'linear-gradient(135deg,#060808,#0a1212)', 'linear-gradient(135deg,#0a060a,#1a0818)'];
         const LOCAL_AVATAR_KEY = 'wiriper_local_avatar';
 
@@ -2508,7 +2530,8 @@
 
         // ---------- MENU DROPDOWN FIX ----------
         window.toggleMenu = function(e) {
-            e.stopPropagation(); e.preventDefault();
+            e.stopPropagation();
+            e.preventDefault();
             const m = $('mainMenu');
             const btn = $('mainMenuBtn');
             if (m.style.display === 'block') { m.style.display = 'none'; return; }
@@ -2522,7 +2545,8 @@
             m.style.pointerEvents = 'auto';
         };
         window.toggleChatMenu = function(e) {
-            e.stopPropagation(); e.preventDefault();
+            e.stopPropagation();
+            e.preventDefault();
             const m = $('chatMenu');
             const btn = e.currentTarget;
             if (m.style.display === 'block') { m.style.display = 'none'; return; }
@@ -2552,8 +2576,10 @@
                 }
             }
         });
+
         $('mainMenu').addEventListener('click', function(e) { e.stopPropagation(); });
         $('chatMenu').addEventListener('click', function(e) { e.stopPropagation(); });
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 $('mainMenu').style.display = 'none';
@@ -2564,7 +2590,8 @@
 
         window.openModal = function(id) { $(id).classList.add('show'); };
         window.closeModal = function(id) { $(id).classList.remove('show'); };
-        window.closeLightbox = function() { $('lightbox').classList.remove('show'); setTimeout(() => $('lightbox').style.display = 'none', 300); };
+        window.closeLightbox = function() { $('lightbox').classList.remove('show');
+        setTimeout(() => $('lightbox').style.display = 'none', 300); };
 
         // ---------- TABS ----------
         window.switchMainTab = function(tab) {
@@ -2691,6 +2718,7 @@
                 } else { hideTyping(); }
             });
         }
+
         async function showTyping(uids) {
             if (uids.length === 0) return hideTyping();
             const u = await getUser(uids[0]);
@@ -2698,7 +2726,9 @@
             $('typingName').textContent = name;
             $('typingIndicator').classList.add('show');
         }
+
         function hideTyping() { $('typingIndicator').classList.remove('show'); }
+
         window.handleTyping = function() {
             if (!activeChatId) return;
             if (typingTimer) clearTimeout(typingTimer);
@@ -2710,7 +2740,8 @@
         window.openChat = async function(chatId, chatDataObj) {
             activeChatId = chatId;
             if (chatDataObj) activeChat = chatDataObj;
-            else { const s = await getDoc(doc(db, 'chats', chatId)); if (!s.exists()) return toast('اتصال یافت نشد', '❌'); activeChat = { id: chatId, ...s.data() }; }
+            else { const s = await getDoc(doc(db, 'chats', chatId));
+            if (!s.exists()) return toast('اتصال یافت نشد', '❌'); activeChat = { id: chatId, ...s.data() }; }
             $('emptyChat').style.display = 'none';
             $('activeChat').style.display = 'flex';
             $('chatPanel').classList.add('open');
@@ -2727,6 +2758,7 @@
             subscribeTyping(chatId);
             document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
         };
+
         window.closeChat = function() { $('chatPanel').classList.remove('open'); activeChatId = null; if (typingUnsub) typingUnsub(); };
 
         async function renderChatHeader() {
@@ -2751,12 +2783,14 @@
         }
 
         function applyBackground(bg) { $('messages').style.backgroundImage = bg || ''; $('messages').style.backgroundColor = bg ? '' : 'var(--bg)'; }
+
         function checkJoinStatus() {
             if (activeChat.type === 'channel' && !activeChat.members.includes(ME.uid)) {
                 $('inputBar').style.display = 'none';
                 $('joinBar').style.display = 'block';
             } else { $('joinBar').style.display = 'none'; $('inputBar').style.display = 'flex'; }
         }
+
         function checkPinnedMsg() {
             if (activeChat && activeChat.pinnedMsg) {
                 $('pinnedBar').style.display = 'block';
@@ -2764,15 +2798,18 @@
                 $('pinnedBar').dataset.id = activeChat.pinnedMsg.id;
             } else { $('pinnedBar').style.display = 'none'; }
         }
+
         window.scrollToPinned = function() {
             const id = $('pinnedBar').dataset.id;
             const el = document.getElementById('msg_' + id);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 const bub = el.querySelector('.bubble');
-                if (bub) { bub.style.boxShadow = '0 0 30px rgba(212,175,55,0.5)'; setTimeout(() => { if (bub) bub.style.boxShadow = ''; }, 2000); }
+                if (bub) { bub.style.boxShadow = '0 0 30px rgba(212,175,55,0.5)';
+                setTimeout(() => { if (bub) bub.style.boxShadow = ''; }, 2000); }
             }
         };
+
         window.joinCurrentChannel = async function() {
             if (!activeChatId) return;
             toast('در حال پردازش ورود...', '⏳');
@@ -2792,6 +2829,7 @@
                 const wasAtBottom = box.scrollHeight - box.scrollTop <= box.clientHeight + 100;
                 box.innerHTML = '';
                 lastMessageDates = {};
+                
                 let prevDate = null;
                 snap.forEach(d => {
                     const m = d.data();
@@ -2879,6 +2917,7 @@
                 await updateDoc(msgRef, { reactions });
             }
         };
+
         window.showLightbox = function(url) {
             $('lbImg').src = url;
             $('lightbox').style.display = 'flex';
@@ -2889,21 +2928,28 @@
         window.startReply = function(id, btn) {
             const bubble = btn.closest('.bubble');
             actionState = { type: 'reply', id, sender: bubble.dataset.senderName, text: bubble.dataset.text };
-            $('abIcon').textContent = '↩️'; $('abTitle').textContent = 'پاسخ به ' + actionState.sender; $('abText').textContent = actionState.text;
+            $('abIcon').textContent = '↩️';
+            $('abTitle').textContent = 'پاسخ به ' + actionState.sender; $('abText').textContent = actionState.text;
             $('actionBanner').style.display = 'flex'; $('msgInput').focus();
         };
+
         window.startEdit = function(id, btn) {
             const bubble = btn.closest('.bubble');
             actionState = { type: 'edit', id };
             $('abIcon').textContent = '✏️'; $('abTitle').textContent = 'ویرایش سیستم'; $('abText').textContent = bubble.dataset.text;
-            $('actionBanner').style.display = 'flex'; $('msgInput').value = bubble.dataset.text; $('msgInput').focus(); autoGrow($('msgInput'));
+            $('actionBanner').style.display = 'flex';
+            $('msgInput').value = bubble.dataset.text; $('msgInput').focus(); autoGrow($('msgInput'));
         };
-        window.cancelAction = function() { actionState = { type: null, id: null }; $('actionBanner').style.display = 'none'; $('msgInput').value = ''; };
+
+        window.cancelAction = function() { actionState = { type: null, id: null };
+            $('actionBanner').style.display = 'none'; $('msgInput').value = ''; };
+
         window.pinMsg = async function(id, btn) {
             if (!activeChatId) return;
             const bubble = btn.closest('.bubble'); let text = bubble.dataset.text; if (text.length > 40) text = text.substring(0, 40) + '...';
             await updateDoc(doc(db, 'chats', activeChatId), { pinnedMsg: { id, text } }); toast('در شبکه پین شد 📌', '✔');
         };
+
         window.translateMsg = function(id) {
             const txtDiv = document.getElementById('txt_' + id), transDiv = document.getElementById('trans_' + id);
             if (!txtDiv || !transDiv) return toast('مختص متون', '⚠️');
@@ -2911,14 +2957,19 @@
             transDiv.style.display = 'block'; transDiv.textContent = '⏳ پردازش زبان...';
             setTimeout(() => { transDiv.textContent = 'ترجمه هوش مصنوعی: ' + txtDiv.textContent; }, 800);
         };
-        window.deleteMessage = async function(id) { try { await deleteDoc(doc(db, 'chats', activeChatId, 'messages', id)); toast('دیتا پاک شد 🧹', '✨'); } catch (e) { toast('خطا', '❌'); } };
+
+        window.deleteMessage = async function(id) { try { await deleteDoc(doc(db, 'chats', activeChatId, 'messages', id)); toast('دیتا پاک شد 🧹', '✨');
+        } catch (e) { toast('خطا', '❌'); } };
+
         window.deleteActiveChat = async function() {
             if (!confirm('حذف کانکشن و اطلاعات؟')) return;
             try { await deleteDoc(doc(db, 'chats', activeChatId)); closeModal('chatInfoModal'); clearActiveChat(); toast('کانکشن نابود شد', '🗑️'); } catch (e) { toast('خطا', '❌'); }
         };
 
         // ---------- SEND WITH OPTIMISTIC UI ----------
-        window.autoGrow = function(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
+        window.autoGrow = function(el) { el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
+            
         window.toggleRoyalDecree = function() {
             isRoyalDecreeMode = !isRoyalDecreeMode;
             $('btnRoyalDecree').style.background = isRoyalDecreeMode ? 'rgba(191,160,85,0.16)' : 'rgba(255,255,255,0.03)';
@@ -2926,8 +2977,10 @@
             $('btnRoyalDecree').style.color = isRoyalDecreeMode ? '#fff' : 'var(--gold)';
             toast(isRoyalDecreeMode ? 'فرمان سیستمی روشن 📜' : 'حالت عادی');
         };
+
         window.sendMessage = async function() {
-            const input = $('msgInput'); const text = input.value.trim();
+            const input = $('msgInput');
+            const text = input.value.trim();
             if (!activeChatId) return;
             if (actionState.type === 'edit') {
                 if (!text) return;
@@ -2944,11 +2997,13 @@
             renderMessage(tempId, tempMsg);
             const box = $('messages'); twemojiParse(box); box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
             await pushMessage(payload);
-            const tempEl = document.getElementById('msg_' + tempId); if (tempEl) tempEl.remove();
+            const tempEl = document.getElementById('msg_' + tempId);
+            if (tempEl) tempEl.remove();
             isRoyalDecreeMode = false;
             $('btnRoyalDecree').style.background = 'rgba(255,255,255,0.03)'; $('btnRoyalDecree').style.boxShadow = 'none'; $('btnRoyalDecree').style.color = 'var(--gold)';
             updateDoc(doc(db, 'chats', activeChatId, 'typing', 'status'), { users: arrayRemove(ME.uid) }).catch(() => {});
         };
+
         async function pushMessage(data) {
             const msg = { senderId: ME.uid, senderName: ME.displayName, senderIsPremium: ME.isPremium || false, createdAt: serverTimestamp(), edited: false, deleted: false, reactions: {}, readBy: [], ...data };
             await addDoc(collection(db, 'chats', activeChatId, 'messages'), msg);
@@ -2982,20 +3037,39 @@
         };
 
         // ---------- PREMIUM ----------
-        window.openPremiumModal = function() { $('mainMenu').style.display = 'none'; if (ME.isPremium) return toast('شما دسترسی ویژه دارید! 💠'); openModal('premiumModal'); };
+        window.openPremiumModal = function() { $('mainMenu').style.display = 'none';
+            if (ME.isPremium) return toast('شما دسترسی ویژه دارید! 💠'); openModal('premiumModal'); };
+            
         window.buyPremium = async function() {
+            if (ME.isPremium) return toast('شما از قبل دسترسی ویژه دارید 💠');
             if ((ME.credits || 0) < 500) return toast('دارایی ناکافی', '⚠️');
-            await updateDoc(doc(db, 'users', ME.uid), { credits: increment(-500), isPremium: true });
-            ME.credits -= 500; ME.isPremium = true;
-            closeModal('premiumModal'); toast('سطح شما ارتقا یافت! 💠', '🎉'); renderMeHeader();
+            try {
+                const batch = writeBatch(db);
+                batch.update(doc(db, 'users', ME.uid), { credits: increment(-500), isPremium: true });
+                await batch.commit();
+                ME.credits -= 500; ME.isPremium = true;
+                closeModal('premiumModal');
+                toast('سطح شما ارتقا یافت! 💠', '🎉'); renderMeHeader();
+            } catch (e) {
+                toast('خطا در ارتقا، دوباره تلاش کنید', '⚠️');
+            }
         };
+
         window.boostChannel = async function() {
             if (!activeChat || activeChat.type !== 'channel') return;
-            if ((ME.credits || 0) < 50) return toast('نیاز به ۵۰ سکه شبکه', '⚠️');
-            await updateDoc(doc(db, 'users', ME.uid), { credits: increment(-50) });
-            await updateDoc(doc(db, 'chats', activeChatId), { boosts: increment(1) });
-            ME.credits -= 50; activeChat.boosts = (activeChat.boosts || 0) + 1;
-            renderChatHeader(); toast('انرژی کانال افزایش یافت! 🚀', '⚡');
+            if ((ME.credits || 0) < 50) return toast('موجودی کافی نیست', '⚠️');
+            try {
+                const boostBatch = writeBatch(db);
+                boostBatch.update(doc(db, 'users', ME.uid), { credits: increment(-50) });
+                boostBatch.update(doc(db, 'chats', activeChatId), { boosts: increment(1) });
+                await boostBatch.commit();
+                ME.credits -= 50;
+                activeChat.boosts = (activeChat.boosts || 0) + 1;
+                renderChatHeader(); 
+                toast('انرژی کانال افزایش یافت! 🚀', '⚡');
+            } catch(e) {
+                toast('خطا در ارتباط با سرور', '❌');
+            }
         };
 
         // ---------- PROFILE ----------
@@ -3003,9 +3077,11 @@
             $('mainMenu').style.display = 'none';
             $('ppName').value = ME.displayName; $('ppBirth').value = ME.birthDate || ''; $('ppBio').value = ME.bio || ''; $('ppUser').value = '@' + ME.username;
             $('ppCredit').textContent = ME.credits || 0; $('ppGiftScore').textContent = ME.giftScore || 0;
-            const av = $('ppAv'); const effectiveAv = getEffectiveAvatar(); const fallbackEmoji = ME.isPremium ? '💠' : '👤';
+            const av = $('ppAv'); const effectiveAv = getEffectiveAvatar();
+            const fallbackEmoji = ME.isPremium ? '💠' : '👤';
             renderAvatarElement(av, effectiveAv, fallbackEmoji, 'lg');
-            if (ME.isPremium) av.style.borderColor = '#b8960c'; else av.style.borderColor = 'var(--gold)';
+            if (ME.isPremium) av.style.borderColor = '#b8960c';
+            else av.style.borderColor = 'var(--gold)';
             const gBox = $('myGiftsGallery');
             if (ME.receivedGifts && ME.receivedGifts.length > 0) {
                 gBox.innerHTML = ME.receivedGifts.map(g => '<div class="gift-gallery-item"><div style="font-size:32px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5))">' + g.emoji + '</div><div style="font-size:11px;color:var(--gold);margin-top:6px;font-weight:bold;">از ' + g.sender + '</div></div>').reverse().join('');
@@ -3013,6 +3089,7 @@
             } else gBox.innerHTML = '<div style="color:var(--muted);padding:8px;font-weight:600;">بدون دیتای ثبت شده</div>';
             openModal('myProfileModal');
         };
+
         window.saveProfile = async function() {
             const name = $('ppName').value.trim(), bio = $('ppBio').value.trim(), birth = $('ppBirth').value;
             if (!name) return toast('شناسه نمایشی ضروری است', '⚠️');
@@ -3022,6 +3099,7 @@
                 renderMeHeader(); toast('هویت همگام‌سازی شد', '✔'); closeModal('myProfileModal');
             } catch (e) { toast('خطا سیستم', '❌'); }
         };
+
         window.uploadAvatar = async function(e) {
             const file = e.target.files[0];
             e.target.value = '';
@@ -3032,12 +3110,14 @@
                 await updateDoc(doc(db, 'users', ME.uid), { photoURL: url });
                 ME.photoURL = url;
                 setLocalAvatar(url);
-                const ppAvEl = $('ppAv'); renderAvatarElement(ppAvEl, url, ME.isPremium ? '💠' : '👤', 'lg');
+                const ppAvEl = $('ppAv');
+                renderAvatarElement(ppAvEl, url, ME.isPremium ? '💠' : '👤', 'lg');
                 if (ME.isPremium) ppAvEl.style.borderColor = '#b8960c'; else ppAvEl.style.borderColor = 'var(--gold)';
                 renderMeHeader();
                 toast('آواتار با موفقیت بروز شد 💠', '✔');
             } catch (err) { toast('خطا در آپلود آواتار', '❌'); }
         };
+
         window.viewUser = async function(uid) {
             if (uid === ME.uid) { openMyProfile(); return; }
             const u = await getUser(uid);
@@ -3059,7 +3139,9 @@
             } else gBox.innerHTML = '<div style="color:var(--muted);padding:8px;font-weight:600;">بدون دیتای ثبت شده</div>';
             openModal('userProfileModal');
         };
+
         window.startChatWithViewedUser = async function() { closeModal('userProfileModal'); await openOrCreatePrivate(viewedUser.uid, viewedUser); };
+        
         async function openOrCreatePrivate(otherUid, otherData) {
             const cid = privateChatId(ME.uid, otherUid);
             const ref = doc(db, 'chats', cid);
@@ -3076,11 +3158,13 @@
             const aiChatId = 'ai_assistant';
             openChat(aiChatId, { id: aiChatId, type: 'private', members: [ME.uid, 'ai'], name: 'Wiriper AI', photoURL: '', background: '' });
         };
+        
         // Modify sendMessage to intercept AI chat and call backend
         const originalSendMessage = window.sendMessage;
         window.sendMessage = async function() {
             if (activeChatId === 'ai_assistant') {
-                const input = $('msgInput'); const text = input.value.trim();
+                const input = $('msgInput');
+                const text = input.value.trim();
                 if (!text) return;
                 // Add user message immediately
                 const userMsg = { id: 'ai_user_' + Date.now(), senderId: ME.uid, senderName: ME.displayName, type: 'text', text, createdAt: new Date(), temp: false, reactions: {}, readBy: [] };
@@ -3108,13 +3192,15 @@
                         aiResponse = '🧠 دستیار هوش مصنوعی در حال حاضر در دسترس نیست. لطفاً endpoint را تنظیم کنید.';
                     }
                     // Remove thinking
-                    const thinkEl = document.getElementById('msg_' + thinkId); if (thinkEl) thinkEl.remove();
+                    const thinkEl = document.getElementById('msg_' + thinkId);
+                    if (thinkEl) thinkEl.remove();
                     // Add AI response
                     const aiMsg = { id: 'ai_resp_' + Date.now(), senderId: 'ai', senderName: 'Wiriper AI', type: 'text', text: aiResponse, createdAt: new Date(), temp: false, reactions: {} };
                     renderMessage(aiMsg.id, aiMsg);
                     $('messages').scrollTo({ top: $('messages').scrollHeight, behavior: 'smooth' });
                 } catch (err) {
-                    const thinkEl = document.getElementById('msg_' + thinkId); if (thinkEl) thinkEl.remove();
+                    const thinkEl = document.getElementById('msg_' + thinkId);
+                    if (thinkEl) thinkEl.remove();
                     const errorMsg = { id: 'ai_err_' + Date.now(), senderId: 'ai', senderName: 'Wiriper AI', type: 'text', text: '⚠️ خطا در ارتباط با دستیار هوش مصنوعی', createdAt: new Date(), temp: false, reactions: {} };
                     renderMessage(errorMsg.id, errorMsg);
                 }
@@ -3125,7 +3211,9 @@
 
         // ---------- SEARCH ----------
         let searchTimer = null;
-        window.onSearchInput = function() { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); };
+        window.onSearchInput = function() { clearTimeout(searchTimer);
+            searchTimer = setTimeout(runSearch, 300); };
+            
         async function runSearch() {
             let term = $('globalSearch').value.trim().toLowerCase().replace(/^@/, '');
             const box = $('mainList');
@@ -3145,7 +3233,8 @@
                     div.onclick = () => { openOrCreatePrivate(u.uid, u); $('globalSearch').value = ''; switchMainTab('chats'); };
                     let dot = getLastSeenText(u.lastOnline) === 'آنلاین' ? '<span class="online-dot"></span>' : '';
                     const avDiv3 = document.createElement('div'); avDiv3.className = 'av'; renderAvatarElement(avDiv3, u.photoURL, initials(u.displayName), 'md');
-                    div.innerHTML = avDiv3.outerHTML + '<div class="ci-main"><div class="ci-name">' + (u.isPremium ? '💠' : '') + esc(u.displayName) + ' ' + dot + '</div><div class="ci-last">@' + esc(u.username) + '</div></div>';
+                    div.innerHTML = avDiv3.outerHTML + 
+                    '<div class="ci-main"><div class="ci-name">' + (u.isPremium ? '💠' : '') + esc(u.displayName) + ' ' + dot + '</div><div class="ci-last">@' + esc(u.username) + '</div></div>';
                     box.appendChild(div);
                 });
                 cSnap.forEach(d => {
@@ -3165,7 +3254,8 @@
 
         // ---------- GROUPS & CHANNELS ----------
         window.loadMemberPicker = async function() {
-            const box = $('grpMembers'); box.innerHTML = 'فراخوانی لیست کاربران...';
+            const box = $('grpMembers');
+            box.innerHTML = 'فراخوانی لیست کاربران...';
             const snap = await getDocs(query(collection(db, 'users'), limit(50))); box.innerHTML = '';
             snap.forEach(d => {
                 const u = d.data(); if (u.uid === ME.uid) return;
@@ -3176,12 +3266,15 @@
             });
             twemojiParse(box);
         };
+
         window.createGroup = async function() {
-            const name = $('grpName').value.trim(); if (!name) return toast('نام گروه الزامی است', '⚠️');
+            const name = $('grpName').value.trim();
+            if (!name) return toast('نام گروه الزامی است', '⚠️');
             const sel = [...document.querySelectorAll('#grpMembers .chat-item.active')].map(e => e.dataset.uid);
             const ref = await addDoc(collection(db, 'chats'), { type: 'group', name, photoURL: '', owner: ME.uid, admins: [], members: [ME.uid, ...sel], lastMessage: 'گروه جدید شبکه متصل شد', lastTime: serverTimestamp(), background: '' });
             closeModal('newGroupModal'); $('grpName').value = ''; toast('لینک گروه برقرار شد', '✔'); openChat(ref.id);
         };
+
         window.createChannel = async function() {
             const name = $('chName').value.trim(), desc = $('chDesc').value.trim();
             if (!name) return toast('نام کانال الزامی است', '⚠️');
@@ -3196,18 +3289,26 @@
             $('ciName').textContent = meta.name; twemojiParse($('ciName')); const av = $('ciAv'); renderAvatarElement(av, meta.photo, meta.icon, 'lg');
             if (activeChat.type === 'private') { const other = activeChat.members.find(m => m !== ME.uid) || ME.uid; closeModal('chatInfoModal'); viewUser(other); return; }
             $('ciMembersTitle').style.display = 'block'; $('ciMembers').style.display = 'block';
-            if (activeChat.type === 'channel') { const lvl = Math.floor((activeChat.boosts || 0) / 5) + 1; $('ciBoosts').style.display = 'inline-block'; $('ciBoosts').textContent = 'سطح کانال: ' + lvl + ' (' + (activeChat.boosts || 0) + ' 🚀)'; twemojiParse($('ciBoosts')); $('ciSub').textContent = activeChat.members.length + ' کاربر کانکت شده'; $('channelSettingsUI').style.display = activeChat.owner === ME.uid ? 'block' : 'none'; } else { $('ciBoosts').style.display = 'none'; $('channelSettingsUI').style.display = activeChat.owner === ME.uid ? 'block' : 'none'; $('ciSub').textContent = activeChat.members.length + ' کلاینت فعال'; }
-            if (activeChat.description) { $('ciDesc').style.display = 'block'; $('ciDesc').textContent = activeChat.description; } else $('ciDesc').style.display = 'none';
+            if (activeChat.type === 'channel') { const lvl = Math.floor((activeChat.boosts || 0) / 5) + 1; $('ciBoosts').style.display = 'inline-block';
+            $('ciBoosts').textContent = 'سطح کانال: ' + lvl + ' (' + (activeChat.boosts || 0) + ' 🚀)'; twemojiParse($('ciBoosts'));
+            $('ciSub').textContent = activeChat.members.length + ' کاربر کانکت شده'; $('channelSettingsUI').style.display = activeChat.owner === ME.uid ? 'block' : 'none';
+            } else { $('ciBoosts').style.display = 'none'; $('channelSettingsUI').style.display = activeChat.owner === ME.uid ? 'block' : 'none';
+            $('ciSub').textContent = activeChat.members.length + ' کلاینت فعال'; }
+            if (activeChat.description) { $('ciDesc').style.display = 'block';
+            $('ciDesc').textContent = activeChat.description; } else $('ciDesc').style.display = 'none';
             const mbox = $('ciMembers'); mbox.innerHTML = '';
             for (const uid of activeChat.members) {
                 const u = await getUser(uid);
                 const div = document.createElement('div'); div.className = 'chat-item'; div.style.margin = '4px 0'; div.style.padding = '8px'; div.style.background = 'rgba(0,0,0,0.45)';
                 const isOwner = uid === activeChat.owner; const isAdmin = (activeChat.admins || []).includes(uid);
-                const badge = isOwner ? '<span style="background:var(--danger);color:#fff;padding:2px 6px;border-radius:6px;font-size:9px;font-weight:bold;">👑 سازنده</span>' : (isAdmin ? '<span style="background:#8b6914;color:#fff;padding:2px 6px;border-radius:6px;font-size:9px;font-weight:bold;">🛡️ مدیر</span>' : '');
-                const avDiv6 = document.createElement('div'); avDiv6.className = 'av'; avDiv6.style.width = '36px'; avDiv6.style.height = '36px'; renderAvatarElement(avDiv6, u.photoURL, initials(u.displayName), 'sm');
+                const badge = isOwner ?
+                '<span style="background:var(--danger);color:#fff;padding:2px 6px;border-radius:6px;font-size:9px;font-weight:bold;">👑 سازنده</span>' : (isAdmin ? '<span style="background:#8b6914;color:#fff;padding:2px 6px;border-radius:6px;font-size:9px;font-weight:bold;">🛡️ مدیر</span>' : '');
+                const avDiv6 = document.createElement('div'); avDiv6.className = 'av';
+                avDiv6.style.width = '36px'; avDiv6.style.height = '36px'; renderAvatarElement(avDiv6, u.photoURL, initials(u.displayName), 'sm');
                 div.innerHTML = avDiv6.outerHTML + '<div class="ci-main" onclick="closeModal(\'chatInfoModal\');viewUser(\'' + uid + '\');"><div class="ci-name" style="font-size:13px">' + (u.isPremium ? '💠' : '') + esc(u.displayName) + ' ' + badge + '</div><div class="ci-last" style="font-size:11px">@' + esc(u.username) + '</div></div>';
                 if (ME.uid === activeChat.owner && !isOwner) {
-                    const btn = document.createElement('button'); btn.textContent = isAdmin ? 'تنزل' : 'ارتقا';
+                    const btn = document.createElement('button');
+                    btn.textContent = isAdmin ? 'تنزل' : 'ارتقا';
                     btn.style.cssText = 'padding:6px 12px;font-size:11px;background:rgba(191,160,85,0.12);color:var(--gold);border-radius:10px;font-weight:900;cursor:pointer;border:1px solid rgba(191,160,85,0.25);transition:var(--transition-fast);min-height:32px;';
                     btn.onclick = (e) => { e.stopPropagation(); toggleAdmin(uid, isAdmin); };
                     div.appendChild(btn);
@@ -3216,58 +3317,99 @@
             }
             twemojiParse(mbox); openModal('chatInfoModal');
         };
+
         window.toggleAdmin = async function(uid, isAdmin) {
             if (!activeChatId || ME.uid !== activeChat.owner) return;
             const ref = doc(db, 'chats', activeChatId);
-            if (isAdmin) { await updateDoc(ref, { admins: arrayRemove(uid) }); activeChat.admins = activeChat.admins.filter(a => a !== uid); } else { await updateDoc(ref, { admins: arrayUnion(uid) }); if (!activeChat.admins) activeChat.admins = []; activeChat.admins.push(uid); }
+            if (isAdmin) { await updateDoc(ref, { admins: arrayRemove(uid) });
+            activeChat.admins = activeChat.admins.filter(a => a !== uid); } else { await updateDoc(ref, { admins: arrayUnion(uid) });
+            if (!activeChat.admins) activeChat.admins = []; activeChat.admins.push(uid); }
             openChatInfo();
         };
-        window.clearActiveChat = function() { activeChatId = null; activeChat = null; if (msgUnsub) msgUnsub(); if (typingUnsub) typingUnsub(); $('activeChat').style.display = 'none'; $('emptyChat').style.display = 'flex'; $('chatPanel').classList.remove('open'); hideTyping(); };
+
+        window.clearActiveChat = function() { activeChatId = null; activeChat = null; if (msgUnsub) msgUnsub(); if (typingUnsub) typingUnsub(); $('activeChat').style.display = 'none';
+        $('emptyChat').style.display = 'flex'; $('chatPanel').classList.remove('open'); hideTyping(); };
 
         // ---------- CREDITS & GIFTS ----------
-        window.openCreditModal = function() { $('mainMenu').style.display = 'none'; $('cmCredit').textContent = ME.credits || 0; openModal('creditModal'); };
-        window.addCredits = async function(n) { await updateDoc(doc(db, 'users', ME.uid), { credits: increment(n) }); ME.credits = (ME.credits || 0) + n; $('cmCredit').textContent = ME.credits; toast('+' + n + ' اعتبار اضافه شد ⭐'); };
+        window.openCreditModal = function() { $('mainMenu').style.display = 'none';
+        $('cmCredit').textContent = ME.credits || 0; openModal('creditModal'); };
+
+        const COIN_PACKAGES = [ { coins: 100, price: '۲۹٬۰۰۰ ت' }, { coins: 300, price: '۷۹٬۰۰۰ ت' }, { coins: 800, price: '۱۹۹٬۰۰۰ ت' } ];
+        window.buyCoins = function(idx) { 
+            const p = COIN_PACKAGES[idx]; 
+            if (!p) return;
+            toast('در حال انتقال به درگاه پرداخت برای ' + p.coins + ' سکه…', '💳');
+            /* افزایش credits فقط سمت سرور بعد از تأیید پرداخت */ 
+        };
+
         let giftTargetUid = null;
-        window.openGiftModal = function() { $('chatMenu').style.display = 'none'; if (activeChat && activeChat.type === 'private') giftTargetUid = activeChat.members.find(m => m !== ME.uid) || ME.uid; else if (activeChat && activeChat.type === 'channel') giftTargetUid = 'CHANNEL_GIFT'; else giftTargetUid = null; $('gmCredit').textContent = ME.credits || 0; openModal('giftModal'); };
+        window.openGiftModal = function() { $('chatMenu').style.display = 'none';
+            if (activeChat && activeChat.type === 'private') giftTargetUid = activeChat.members.find(m => m !== ME.uid) || ME.uid;
+            else if (activeChat && activeChat.type === 'channel') giftTargetUid = 'CHANNEL_GIFT'; else giftTargetUid = null; $('gmCredit').textContent = ME.credits || 0; openModal('giftModal');
+        };
         window.openGiftToViewedUser = function() { closeModal('userProfileModal'); giftTargetUid = viewedUser.uid; $('gmCredit').textContent = ME.credits || 0; openModal('giftModal'); };
+        
         window.sendGift = async function(emoji, value) {
+            value = Number(value);
+            if (!Number.isInteger(value) || value <= 0) return;
+            if (!giftTargetUid) return toast('گیرنده نامعتبر است', '⚠️');
+            if (giftTargetUid === ME.uid) return toast('نمی‌توانید به خودتان هدیه دهید', '⚠️');
             if ((ME.credits || 0) < value) return toast('موجودی شبکه کافی نیست', '⚠️');
-            if (giftTargetUid === 'CHANNEL_GIFT') {
-                await updateDoc(doc(db, 'users', ME.uid), { credits: increment(-value) });
-                await updateDoc(doc(db, 'chats', activeChatId), { boosts: increment(Math.floor(value / 10)) });
-                ME.credits -= value; activeChat.boosts = (activeChat.boosts || 0) + Math.floor(value / 10);
+            
+            try {
+                const batch = writeBatch(db);
+                batch.update(doc(db, 'users', ME.uid), { credits: increment(-value) });
+                
+                if (giftTargetUid === 'CHANNEL_GIFT') {
+                    batch.update(doc(db, 'chats', activeChatId), { boosts: increment(Math.floor(value / 10)) });
+                } else {
+                    batch.update(doc(db, 'users', giftTargetUid), { giftScore: increment(value), receivedGifts: arrayUnion({ emoji, sender: ME.displayName, value }) });
+                }
+                await batch.commit();
+                
+                ME.credits -= value;
+                $('gmCredit').textContent = ME.credits;
+                
+                if (giftTargetUid === 'CHANNEL_GIFT') {
+                    activeChat.boosts = (activeChat.boosts || 0) + Math.floor(value / 10);
+                    renderChatHeader();
+                } else {
+                    let chatId = activeChatId;
+                    if (giftTargetUid && (!activeChat || activeChat.type !== 'private' || !activeChat.members.includes(giftTargetUid))) { 
+                        const u = await getUser(giftTargetUid); 
+                        await openOrCreatePrivate(giftTargetUid, u);
+                    }
+                }
+                
                 await pushMessage({ type: 'gift', gift: emoji, giftValue: value, text: '' });
-                closeModal('giftModal'); renderChatHeader(); return toast('دارایی به سیستم کانال واریز شد! 🚀', '💠');
+                closeModal('giftModal');
+                toast('هدیه ارسال شد ' + emoji, '🎁');
+            } catch (e) {
+                toast('خطا در ارسال هدیه', '⚠️');
             }
-            let chatId = activeChatId;
-            if (giftTargetUid && (!activeChat || activeChat.type !== 'private' || !activeChat.members.includes(giftTargetUid))) { const u = await getUser(giftTargetUid); await openOrCreatePrivate(giftTargetUid, u); chatId = activeChatId; }
-            if (!chatId) return toast('اتصالی برای انتقال یافت نشد');
-            await updateDoc(doc(db, 'users', ME.uid), { credits: increment(-value) });
-            if (giftTargetUid) { await updateDoc(doc(db, 'users', giftTargetUid), { credits: increment(value), giftScore: increment(value), receivedGifts: arrayUnion({ emoji, sender: ME.displayName, value }) }); }
-            ME.credits -= value;
-            await pushMessage({ type: 'gift', gift: emoji, giftValue: value, text: '' });
-            closeModal('giftModal'); toast('انتقال تایید شد ' + emoji, '🎁');
         };
 
         // ---------- BACKGROUND ----------
         window.openBgModal = function() {
-            $('chatMenu').style.display = 'none'; const grid = $('bgGrid'); grid.innerHTML = '';
+            $('chatMenu').style.display = 'none';
+            const grid = $('bgGrid'); grid.innerHTML = '';
             BACKGROUNDS.forEach(bg => {
                 const d = document.createElement('div'); d.className = 'bg-opt' + (activeChat && activeChat.background === bg ? ' sel' : '');
                 d.style.height = '100px'; d.style.borderRadius = 'var(--radius)'; d.style.cursor = 'pointer'; d.style.border = '3px solid transparent'; d.style.backgroundSize = 'cover'; d.style.backgroundPosition = 'center'; d.style.transition = 'var(--transition-bounce)'; d.style.boxShadow = 'var(--elevation-1)'; d.style.background = bg || 'var(--bg2)';
+            
                 d.onclick = () => setBackground(bg);
                 grid.appendChild(d);
             });
             openModal('bgModal');
         };
-        window.setBackground = async function(bg) { await updateDoc(doc(db, 'chats', activeChatId), { background: bg }); activeChat.background = bg; applyBackground(bg); closeModal('bgModal'); toast('بک‌گراند سیستم بروزرسانی شد', '🖼️'); };
+
+        window.setBackground = async function(bg) { await updateDoc(doc(db, 'chats', activeChatId), { background: bg }); activeChat.background = bg; applyBackground(bg); closeModal('bgModal');
+        toast('بک‌گراند سیستم بروزرسانی شد', '🖼️'); };
 
         $('msgInput').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-
         let touchStartX = 0;
         document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, { passive: true });
         document.addEventListener('touchend', function(e) { if (!activeChatId) return; const diff = e.changedTouches[0].clientX - touchStartX; if (Math.abs(diff) > 80 && diff > 0 && window.innerWidth <= 800) { closeChat(); } });
-
         console.log('💠 Wiriper — شبکه هوشمند آماده سرویس‌دهی');
     </script>
 </body>
