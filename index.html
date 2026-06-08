@@ -842,22 +842,22 @@
             return d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) + ' آخرین بازدید';
         }
 
-        function addRipple(e) {
-            const btn = e.currentTarget;
-            const ripple = document.createElement('span');
-            ripple.className = 'ripple-effect';
-            const rect = btn.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-            ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
-            btn.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 500);
-        }
-        document.addEventListener('click', function(e) {
-            const btn = e.target.closest('button');
-            if (btn && !btn.closest('.msg-actions') && !btn.closest('.react-badge')) addRipple(e);
-        });
+        function addRipple(btn, e) {
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple-effect';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 500);
+}
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('button');
+    if (btn && !btn.closest('.msg-actions') && !btn.closest('.react-badge')) addRipple(btn, e);
+});
+
 
         // ---------- LOCAL AVATAR PERSISTENCE ----------
         function getLocalAvatar() { try { return localStorage.getItem(LOCAL_AVATAR_KEY); } catch (e) { return null; } }
@@ -1166,7 +1166,7 @@
                 div.className = 'chat-item' + (c.id === activeChatId ? ' active' : '');
                 div.onclick = () => openChat(c.id, c);
                 const tag = c.type === 'group' ? '<span class="tag">گروه</span>' : c.type === 'channel' ? '<span class="tag">چنل</span>' : '';
-                const sub = isDiscover ? c.members.length + ' کاربر' : esc(c.lastMessage || '');
+                const sub = isDiscover ? c.members.length + ' کاربر' : escapeHtml(c.lastMessage || '');
                 let dot = '';
                 if (c.type === 'private' && meta.userData && getLastSeenText(meta.userData.lastOnline) === 'آنلاین') dot = '<span class="online-dot"></span>';
                 let unreadHTML = '';
@@ -2060,6 +2060,7 @@
 
         /* ===================== STORIES ===================== */
         function loadStories() {
+            let storyGroups = [];
             if (!ME) return;
             if (storiesUnsub) storiesUnsub();
             const q = query(collection(db, 'stories'), where('expiresAt', '>', Timestamp.now()), orderBy('expiresAt', 'asc'));
