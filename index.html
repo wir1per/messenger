@@ -117,7 +117,7 @@
         .sparkle:nth-child(3) { left: 28%; top: 72%; animation-delay: 0.9s; } .sparkle:nth-child(4) { left: 72%; top: 76%; animation-delay: 1.3s; }
         @keyframes sparkleFloat { 0% { opacity: 0; transform: translateY(0) scale(0); } 50% { opacity: 1; transform: translateY(-30px) scale(2.5); } 100% { opacity: 0; transform: translateY(-60px) scale(0); } }
 
-        /* ===== صفحه ورود لوکس (Private Jet Feel) ===== */
+        /* ===== صفحه ورود لوکس ===== */
         #authScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% -20%, #1a0808, var(--bg)); z-index: 50; padding: 16px; overflow: hidden; }
         #authScreen::before { content: ''; position: absolute; top: 50%; left: 50%; width: 480px; height: 480px; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(191, 160, 85, 0.10), transparent 70%); filter: blur(40px); pointer-events: none; animation: authGlow 6s ease-in-out infinite; }
         @keyframes authGlow { 0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } }
@@ -250,7 +250,6 @@
         .chat-header .h-sub { font-size: 11px; color: var(--gold); margin-top: 2px; font-weight: 800; opacity: 0.9; letter-spacing: 0.5px; transition: color var(--transition-smooth); }
         .chat-header .h-sub.online { display: inline-flex; align-items: center; gap: 6px; }
         .chat-header .h-sub.online::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.6); animation: livePulse 1.8s ease-out infinite; }
-        @keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.55); } 70% { box-shadow: 0 0 0 7px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
 
         .call-actions { display: flex; gap: 8px; margin-left: 8px; flex-shrink: 0; }
         .call-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.04); color: var(--txt); display: flex; align-items: center; justify-content: center; font-size: 16px; transition: var(--transition-bounce); border: 1px solid rgba(191, 160, 85, 0.1); box-shadow: var(--elevation-1); cursor: pointer; }
@@ -787,6 +786,9 @@
         const BACKGROUNDS = ['', 'linear-gradient(135deg,#0a0606,#1a0808)', 'linear-gradient(135deg,#0d0808,#1a0a0a)', 'linear-gradient(135deg,#060808,#0a1212)', 'linear-gradient(135deg,#0a060a,#1a0818)'];
         const LOCAL_AVATAR_KEY = 'wiriper_local_avatar';
 
+        // Variables for readReceipt debounce/throttle to avoid spamming toasts
+        let lastReadErrorTime = 0;
+
         // ---------- Stories State ----------
         let allStories = [];
         let groupedStories = {};
@@ -1291,7 +1293,7 @@
         window.handleTyping = function() {
             if (!activeChatId) return;
             if (typingTimer) clearTimeout(typingTimer);
-            updateDoc(doc(db, 'chats', activeChatId, 'typing', 'status'), { users: arrayUnion(ME.uid) }).catch(() => {});
+            updateDoc(doc(db, 'chats', activeChatId, 'typing', 'status'), { users: arrayUnion(ME.uid) }).catch((e) => { console.error('Typing indicator update error:', e); });
             typingTimer = setTimeout(() => { updateDoc(doc(db, 'chats', activeChatId, 'typing', 'status'), { users: arrayRemove(ME.uid) }).catch(() => {}); }, 3000);
         };
 
@@ -1459,9 +1461,19 @@
             } else {
                 inner = '<div class="b-text" id="txt_' + id + '">' + esc(m.text) + '</div>';
             }
+            
+            // اصلاح باگ خوانده شدن پیام‌ها و مدیریت ارورها
             if (!mine && !m.temp && (!m.readBy || !m.readBy.includes(ME.uid))) {
-                updateDoc(doc(db, 'chats', activeChatId, 'messages', id), { readBy: arrayUnion(ME.uid) }).catch(() => {});
+                updateDoc(doc(db, 'chats', activeChatId, 'messages', id), { readBy: arrayUnion(ME.uid) })
+                .catch((err) => {
+                    console.error("Read receipt error:", err);
+                    if (Date.now() - lastReadErrorTime > 5000) {
+                        toast('خطای همگام‌سازی وضعیت بازدید (قوانین امنیتی)', '⚠️');
+                        lastReadErrorTime = Date.now();
+                    }
+                });
             }
+            
             let reactHTML = '';
             if (m.reactions && Object.keys(m.reactions).length > 0 && !m.temp) {
                 reactHTML = '<div class="reactions-display">';
@@ -1493,16 +1505,22 @@
         window.toggleReaction = async function(msgId, emoji) {
             if (!activeChatId) return;
             const msgRef = doc(db, 'chats', activeChatId, 'messages', msgId);
-            const snap = await getDoc(msgRef);
-            if (snap.exists()) {
-                let data = snap.data();
-                let reactions = data.reactions || {};
-                if (!reactions[emoji]) reactions[emoji] = [];
-                if (reactions[emoji].includes(ME.uid)) reactions[emoji] = reactions[emoji].filter(id => id !== ME.uid);
-                else reactions[emoji].push(ME.uid);
-                await updateDoc(msgRef, { reactions });
+            try {
+                const snap = await getDoc(msgRef);
+                if (snap.exists()) {
+                    let data = snap.data();
+                    let reactions = data.reactions || {};
+                    if (!reactions[emoji]) reactions[emoji] = [];
+                    if (reactions[emoji].includes(ME.uid)) reactions[emoji] = reactions[emoji].filter(id => id !== ME.uid);
+                    else reactions[emoji].push(ME.uid);
+                    await updateDoc(msgRef, { reactions });
+                }
+            } catch (err) {
+                console.error("Reaction update error:", err);
+                toast('خطا در ثبت ری‌اکشن', '⚠️');
             }
         };
+        
         window.showLightbox = function(url) {
             $('lbImg').src = url;
             $('lightbox').style.display = 'flex';
