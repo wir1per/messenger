@@ -1,0 +1,4179 @@
+Update
+
+بذار کد را بررسی کنم تا دقیق ببینم پیش‌نمایش آخرین پیام چطور ساخته می‌شود و چرا پیام اشتباه نشان می‌دهد.
+برای باگ پیام اشتباه باید ببینم پیش‌نمایش (`lastMessage`) دقیقاً موقع ارسال چطور ساخته می‌شود. بذار تابع ارسال پیام را بیرون بکشم.
+بذار خود تصویر را دقیق بخوانم تا ببینم زیر اسم هر چت دقیقاً چه چیزی نوشته شده، چون باید بفهمم این ایموجی‌ها از کجا می‌آیند.
+تصویر و کد را تطبیق دادم. حالا دقیق می‌دانم چه خبر است. دو موضوع جداست، بذار شفاف توضیح بدهم.
+
+موضوع اول، پیام‌هایی که می‌گویی نفرستادی:
+زیر اسم هر چت، آخرین پیامِ همان گفتگو نشان داده می‌شود، نه آخرین پیامِ تو. پس `😂😂` زیر مریم یعنی آخرین پیام آن چت این بوده (احتمالاً طرف مقابل یا دیتای تستِ قبلی فرستاده). این رفتار طبیعی است. ولی یک باگ واقعی هم آنجا هست: زیر عرفان نوشته `سیگنال`. این کلمه‌ی واقعی نیست، یک متن جایگزین (fallback) است که وقتی نوع پیام را کد نمی‌شناسد چاپ می‌شود. یعنی تابع `pushMessage` فقط متن و عکس را می‌شناسد و برای ویدیو/صدا/استیکر متن درست نمی‌سازد.
+
+اصلاح اول؛ تابع `pushMessage` (خطوط ۲۹۵۲ تا ۲۹۵۷) را با این نسخه جایگزین کن:
+
+```js
+async function pushMessage(data) {
+    const msg = { senderId: ME.uid, senderName: ME.displayName, senderIsPremium: ME.isPremium || false, createdAt: serverTimestamp(), edited: false, deleted: false, reactions: {}, readBy: [], ...data };
+    await addDoc(collection(db, 'chats', activeChatId, 'messages'), msg);
+
+    let preview;
+    switch (data.type) {
+        case 'image':   preview = '📷 تصویر'; break;
+        case 'video':   preview = '🎬 ویدیو'; break;
+        case 'voice':   preview = '🎤 پیام صوتی'; break;
+        case 'sticker': preview = '🎟 استیکر'; break;
+        case 'file':    preview = '📎 فایل'; break;
+        case 'gif':     preview = '🖼 گیف'; break;
+        default:        preview = (data.text && data.text.trim()) ? data.text : 'پیام';
+    }
+    if (data.isRoyalDecree) preview = '📜 سیستم: ' + preview;
+
+    await updateDoc(doc(db, 'chats', activeChatId), { lastMessage: preview.slice(0, 45), lastTime: serverTimestamp() });
+}
+```
+
+با این تغییر دیگر کلمه‌ی بی‌معنی `سیگنال` نمایش داده نمی‌شود و هر نوع پیام برچسب درست خودش را می‌گیرد. آن `😂😂` و `🎬 ویدیو` که الان روی چت‌های قدیمی هست، با همان دیتای قدیمی می‌ماند تا پیام جدیدی در آن چت رد و بدل شود؛ اگر می‌خواهی تمیز شود، آن چت‌های تستی را حذف کن.
+
+اصلاح دوم؛ فاصله‌ی نوار تب‌ها با دکمه‌های گروه/چنل. کلاس `.new-menu` (خط ۷۸۱) الان padding بالایی ندارد. این را:
+
+```css
+.new-menu {
+    display: flex;
+    gap: 10px;
+    padding: 0 16px 12px;
+}
+```
+
+به این تغییر بده:
+
+```css
+.new-menu {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px 12px;
+}
+```
+
+فقط مقدار اول `0` به `14px` تبدیل شد تا بین نوار تب‌ها و دکمه‌های گروه و چنل فاصله‌ی نفس‌گیری ایجاد شود.
+
+این دو بخش را اعمال کن و آپدیت کن، بعد بهم بگو روی موبایل چطور شد. درباره‌ی «باگ‌های دیگر و چیزهای بهتر» هم بگو دقیقاً کدام بخش‌ها اذیتت می‌کنند تا یکی‌یکی جلو برویم.
+
+
+بذار کد مربوط به دکمه‌ی سه‌نقطه‌ی هدر چت را پیدا کنم تا ببینم به چه پنلی وصل شده.
+مشکل پیدا شد. تابع `toggleChatMenu` منو را با فرمول `left = rect.left - 180` جای می‌دهد. یعنی منو را ۱۸۰ پیکسل به سمت چپِ دکمه می‌بَرد. این فرمول برای وقتی نوشته شده که دکمه‌ی سه‌نقطه سمت راست صفحه باشد. ولی الان دکمه گوشه‌ی چپِ بالاست، پس `rect.left` عدد کوچکی است و `rect.left - 180` منفی می‌شود؛ در نتیجه منو از لبه‌ی چپِ صفحه بیرون می‌زند و همان حالتی که در عکس دور آن خط کشیدی پیش می‌آید.
+
+راه‌حل این است که جای منو را هوشمند کنیم: اگر دکمه نزدیک لبه‌ی چپ بود، منو سمت راستِ دکمه باز شود، و در هر حال داخل صفحه بماند.
+
+تابع `toggleChatMenu` (خطوط ۲۵۲۴ به بعد) را با این نسخه جایگزین کن:
+
+```js
+window.toggleChatMenu = function(e) {
+    e.stopPropagation(); e.preventDefault();
+    const m = $('chatMenu');
+    const btn = e.currentTarget;
+    if (m.style.display === 'block') { m.style.display = 'none'; return; }
+    $('mainMenu').style.display = 'none';
+
+    const rect = btn.getBoundingClientRect();
+    m.style.display = 'block';
+    m.style.position = 'fixed';
+
+    // اول نمایش بده تا بشه عرض واقعی منو رو خوند
+    const menuW = m.offsetWidth || 200;
+    const menuH = m.offsetHeight || 0;
+    const margin = 8;
+
+    // افقی: تلاش کن منو رو سمت چپِ دکمه بذاری، ولی اگه از لبه بیرون زد بیارش سمت راست
+    let left = rect.left - (menuW - rect.width);
+    if (left < margin) left = rect.left;              // دکمه چسبیده به لبه چپه => منو رو از خودِ دکمه شروع کن
+    if (left + menuW > window.innerWidth - margin)    // از لبه راست بیرون نزنه
+        left = window.innerWidth - menuW - margin;
+
+    // عمودی: زیر دکمه، ولی اگه پایین جا نبود بالای دکمه
+    let top = rect.bottom + 4;
+    if (top + menuH > window.innerHeight - margin)
+        top = rect.top - menuH - 4;
+
+    m.style.left = Math.max(margin, left) + 'px';
+    m.style.top = Math.max(margin, top) + 'px';
+};
+```
+
+این نسخه چند کار می‌کند:
+
+- اول عرض واقعی منو را از `offsetWidth` می‌خواند، به‌جای عدد ثابت ۱۸۰.
+- اگر دکمه چسبیده به لبه‌ی چپ بود (مثل الان)، منو را از خود دکمه به سمت راست باز می‌کند تا بیرون نزند.
+- چک می‌کند منو نه از چپ، نه از راست و نه از پایینِ صفحه بیرون نزند و در صورت لزوم جابه‌جایش می‌کند.
+
+یک نکته: تابع اصلی شاید چند خط دیگر هم بعد از این داشته باشد (مثلاً بستن منو با کلیک بیرون). نسخه‌ی بالا فقط بخش جای‌گذاری را امن می‌کند. اگر بعد از خط `m.style.left` در کد اصلی‌ات خطوط دیگری بود، بگو تا کاملش را ببینم و دست‌نخورده نگه دارم. اعمالش کن و روی موبایل تست کن ببین منو حالا درست زیر سه‌نقطه باز می‌شود.
+
+و اینکه 
+
+بذار اول ساختار فعلی کدت رو دقیق ببینم تا استوری رو هماهنگ با همون استایل و منطق Firestore خودت بنویسم، نه یه چیز ناهماهنگ.
+نتیجه‌ی جستجو خالی برگشت و محتوای واقعی کد رو نداد. بذار دقیق‌تر بگردم تا ساختار Firebase، شیء کاربر، و توابع رندر چت رو ببینم.
+بذار قبل از نوشتن، دو چیز دقیق رو ببینم: خط `import`های Firebase (تا بدونم چه توابعی در دسترسه) و کانتینر دقیق لیست چت‌ها (تا نوار استوری رو سر جاش بذارم).
+عالی، الان ساختارت رو کامل دارم. طبق کد، تب‌محور بودن (`switchMainTab`) و کالکشن top-level مثل `chats` رو داری، و `Timestamp` هم import شده. پس استوری رو دقیقاً هم‌استایل خودت می‌سازم.
+
+تصمیم طراحی: استوری رو تب جدا نمی‌کنم. به‌جاش یه نوار افقی استوری بالای `#mainList` می‌ذارم (دقیقاً مثل اینستا/تلگرام)، فقط وقتی تب «گفتگوها» فعاله. این حس آشناتر و جوون‌پسندتره.
+
+ساختار داده در Firestore: کالکشن top-level به اسم `stories`. هر داک:
+ownerId, ownerName, ownerPhoto, mediaUrl, type:'image',
+createdAt: serverTimestamp(), expiresAt: Timestamp (۲۴ ساعت بعد), viewers: []
+
+
+حالا کد رو تکه‌تکه می‌دم. هر تکه رو سر جاش بذار.
+
+---
+
+۱) HTML — نوار استوری. این رو دقیقاً بالای خط `<div id="mainList" class="chat-list"></div>` (خط ۲۱۱۸) اضافه کن:
+
+```html
+<div id="storyBar" class="story-bar"></div>
+<input type="file" id="storyFileInput" accept="image/*" style="display:none" onchange="handleStoryFile(event)">
+```
+
+---
+
+۲) CSS — این بلوک رو داخل تگ `<style>` (هرجای انتهای استایل‌ها) اضافه کن:
+
+```css
+.story-bar {
+    display: flex; gap: 14px; padding: 14px 12px 10px;
+    overflow-x: auto; scrollbar-width: none;
+    border-bottom: 1px solid rgba(191,160,85,0.12);
+}
+.story-bar::-webkit-scrollbar { display: none; }
+.story-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; cursor: pointer; flex-shrink: 0; width: 64px;
+}
+.story-ring {
+    width: 60px; height: 60px; border-radius: 50%;
+    padding: 2px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold2));
+    transition: transform .15s ease;
+}
+.story-ring.seen { background: rgba(160,160,160,0.35); }
+.story-ring.mine { background: linear-gradient(135deg, #d4af37, #a68a30); }
+.story-item:active .story-ring { transform: scale(0.92); }
+.story-ring img {
+    width: 100%; height: 100%; border-radius: 50%;
+    object-fit: cover; border: 2px solid var(--bg);
+}
+.story-add-badge {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold); color: #000; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg); font-weight: bold;
+}
+.story-label {
+    font-size: 11px; color: var(--champagne);
+    max-width: 60px; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; text-align: center;
+}
+.story-viewer {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #000; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+}
+.story-viewer.open { display: flex; animation: storyFade .2s ease; }
+@keyframes storyFade { from { opacity: 0 } to { opacity: 1 } }
+.story-progress {
+    position: absolute; top: 10px; left: 10px; right: 10px;
+    display: flex; gap: 4px; z-index: 5;
+}
+.story-progress span {
+    flex: 1; height: 3px; border-radius: 3px;
+    background: rgba(255,255,255,0.3); overflow: hidden;
+}
+.story-progress span i {
+    display: block; height: 100%; width: 0;
+    background: #fff; border-radius: 3px;
+}
+.story-viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.story-vhead {
+    position: absolute; top: 24px; left: 14px; right: 14px;
+    display: flex; align-items: center; gap: 10px; z-index: 5; color: #fff;
+}
+.story-vhead img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+.story-vhead .sv-name { font-size: 14px; font-weight: 600; }
+.story-vhead .sv-time { font-size: 11px; opacity: 0.7; }
+.story-close { margin-right: auto; background: none; border: none; color: #fff; font-size: 26px; cursor: pointer; }
+.story-nav { position: absolute; top: 0; bottom: 0; width: 35%; z-index: 4; }
+.story-nav.left { left: 0; } .story-nav.right { right: 0; }
+```
+
+---
+
+۳) Story viewer (تمام‌صفحه). این رو قبل از بسته‌شدن `</body>` اضافه کن:
+
+```html
+<div id="storyViewer" class="story-viewer">
+    <div class="story-progress" id="storyProgress"></div>
+    <div class="story-vhead">
+        <img id="svAvatar" src="" alt="">
+        <div>
+            <div class="sv-name" id="svName"></div>
+            <div class="sv-time" id="svTime"></div>
+        </div>
+        <button class="story-close" onclick="closeStoryViewer()">✕</button>
+    </div>
+    <div class="story-nav left" onclick="prevStory()"></div>
+    <div class="story-nav right" onclick="nextStory()"></div>
+    <img id="svImage" src="" alt="">
+</div>
+```
+
+---
+
+کد JavaScript توابع رو تو پیام بعدی می‌فرستم (منطق بارگذاری، آپلود، نمایش و قوانین Firestore). بگو ادامه بدم تا بقیه‌اش رو بدم.
+
+بذار اول الگوی توابع موجودت رو ببینم (آپلود فایل، `switchMainTab`، نحوه‌ی کوئری Firestore و رندر) تا کد استوری دقیقاً هم‌سبک خودت باشه.
+نکته‌ی مهم: جستجو نشون داد که از Firebase Storage استفاده نمی‌کنی (هیچ `uploadBytes` یا `getStorage` نبود). پس احتمالاً آواتار و رسانه‌ها رو با FileReader به base64 تبدیل می‌کنی و مستقیم تو Firestore ذخیره می‌کنی. این برای استوری مهمه چون منطق `handleStoryFile` باید با همون روش بسازم.
+
+بذار مکانیزم واقعی آپلود رو پیدا کنم تا کد دقیق و هم‌سبک بشه.
+حالا کاملاً روشنه. آپلود از طریق `uploadToImgBB(file)` انجام میشه و URL برمی‌گرده، `ME` هم آبجکت کاربره با `ME.uid`, `ME.displayName`, و آواتار از `getEffectiveAvatar()`. پس کد استوری رو دقیقاً هم‌سبک خودت می‌نویسم.
+
+این بلوک کامل JS رو هرجای بخش توابع (مثلاً بعد از `switchMainTab`) اضافه کن:
+
+```js
+// ========================= STORIES =========================
+let storiesUnsub = null;
+let myStories = [];          // استوری‌های خودم
+let storyGroups = [];        // [{ ownerId, ownerName, ownerPhoto, items:[...] }]
+let svGroupIndex = 0;        // گروه فعلی در ویوِر
+let svItemIndex = 0;         // آیتم فعلی در گروه
+let svTimer = null;
+const STORY_DURATION = 5000; // ۵ ثانیه برای هر استوری
+
+// --- بارگذاری استوری‌های فعال (۲۴ ساعت اخیر) ---
+function loadStories() {
+    if (storiesUnsub) storiesUnsub();
+    const nowTs = Timestamp.now();
+    const q = query(collection(db, 'stories'), where('expiresAt', '>', nowTs));
+    storiesUnsub = onSnapshot(q, function(snap) {
+        const groupsMap = {};
+        myStories = [];
+        snap.forEach(function(d) {
+            const s = d.data();
+            s.id = d.id;
+            if (s.ownerId === ME.uid) myStories.push(s);
+            if (!groupsMap[s.ownerId]) {
+                groupsMap[s.ownerId] = {
+                    ownerId: s.ownerId,
+                    ownerName: s.ownerName || 'کاربر',
+                    ownerPhoto: s.ownerPhoto || null,
+                    items: []
+                };
+            }
+            groupsMap[s.ownerId].items.push(s);
+        });
+        // مرتب‌سازی آیتم‌های هر گروه بر اساس زمان ساخت
+        storyGroups = Object.values(groupsMap).map(function(g) {
+            g.items.sort(function(a, b) {
+                return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+            });
+            return g;
+        });
+        // گروه خودم اول، بقیه بعد
+        storyGroups.sort(function(a, b) {
+            if (a.ownerId === ME.uid) return -1;
+            if (b.ownerId === ME.uid) return 1;
+            return 0;
+        });
+        renderStoryBar();
+    }, function(err) {
+        console.warn('stories load error', err);
+    });
+}
+
+// --- رندر نوار استوری ---
+function renderStoryBar() {
+    const bar = $('storyBar');
+    if (!bar) return;
+    // فقط در تب گفتگوها نمایش بده
+    if (currentMainTab !== 'chats') { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    bar.innerHTML = '';
+
+    // آیتم «استوری من» (همیشه اول)
+    const myAvatar = getEffectiveAvatar();
+    const addItem = document.createElement('div');
+    addItem.className = 'story-item';
+    const hasMine = myStories.length > 0;
+    addItem.innerHTML = `
+        <div class="story-ring ${hasMine ? 'mine' : ''}" style="position:relative">
+            <img src="${myAvatar || ''}" onerror="this.style.display='none'">
+            ${!hasMine ? '<span class="story-add-badge">+</span>' : ''}
+        </div>
+        <span class="story-label">استوری من</span>`;
+    addItem.onclick = function() {
+        if (hasMine) {
+            const idx = storyGroups.findIndex(g => g.ownerId === ME.uid);
+            openStoryViewer(idx);
+        } else {
+            $('storyFileInput').click();
+        }
+    };
+    bar.appendChild(addItem);
+
+    // بقیه گروه‌ها (به جز خودم چون بالا اومد، مگر اینکه خودم استوری داشته باشم)
+    storyGroups.forEach(function(g, gi) {
+        if (g.ownerId === ME.uid) return; // خودم رو بالا گذاشتیم
+        const item = document.createElement('div');
+        item.className = 'story-item';
+        const seen = isStoryGroupSeen(g);
+        item.innerHTML = `
+            <div class="story-ring ${seen ? 'seen' : ''}">
+                <img src="${g.ownerPhoto || ''}" onerror="this.style.display='none'">
+            </div>
+            <span class="story-label">${escapeHtml(g.ownerName)}</span>`;
+        item.onclick = function() { openStoryViewer(gi); };
+        bar.appendChild(item);
+    });
+}
+
+// --- آپلود استوری جدید ---
+window.handleStoryFile = async function(event) {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+        toast && toast('در حال آپلود استوری...');
+        const url = await uploadToImgBB(file);
+        const expires = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+        await addDoc(collection(db, 'stories'), {
+            ownerId: ME.uid,
+            ownerName: ME.displayName || 'کاربر',
+            ownerPhoto: getEffectiveAvatar() || '',
+            mediaUrl: url,
+            type: 'image',
+            createdAt: serverTimestamp(),
+            expiresAt: expires,
+            viewers: []
+        });
+        toast && toast('استوری منتشر شد ✨');
+    } catch (e) {
+        toast && toast('خطا در آپلود استوری');
+        console.warn(e);
+    }
+};
+```
+
+و این بخش دوم (ویوِر تمام‌صفحه + منطق دیده‌شدن) رو بلافاصله بعدش بذار:
+
+```js
+// --- آیا این گروه استوری دیده شده؟ ---
+function isStoryGroupSeen(g) {
+    return g.items.every(function(s) {
+        return Array.isArray(s.viewers) && s.viewers.includes(ME.uid);
+    });
+}
+
+// --- باز کردن ویوِر ---
+window.openStoryViewer = function(groupIndex) {
+    if (groupIndex < 0 || groupIndex >= storyGroups.length) return;
+    svGroupIndex = groupIndex;
+    svItemIndex = 0;
+    $('storyViewer').classList.add('open');
+    showCurrentStory();
+};
+
+function showCurrentStory() {
+    const group = storyGroups[svGroupIndex];
+    if (!group) return closeStoryViewer();
+    const item = group.items[svItemIndex];
+    if (!item) return nextGroup();
+
+    $('svImage').src = item.mediaUrl;
+    $('svAvatar').src = group.ownerPhoto || '';
+    $('svName').textContent = group.ownerName;
+    $('svTime').textContent = storyTimeAgo(item.createdAt);
+
+    // نوار پیشرفت
+    const prog = $('storyProgress');
+    prog.innerHTML = group.items.map(function(_, i) {
+        return `<span><i style="width:${i < svItemIndex ? 100 : 0}%"></i></span>`;
+    }).join('');
+
+    // انیمیشن نوار جاری
+    requestAnimationFrame(function() {
+        const bars = prog.querySelectorAll('span i');
+        if (bars[svItemIndex]) {
+            bars[svItemIndex].style.transition = `width ${STORY_DURATION}ms linear`;
+            bars[svItemIndex].style.width = '100%';
+        }
+    });
+
+    markStorySeen(item);
+    clearTimeout(svTimer);
+    svTimer = setTimeout(nextStory, STORY_DURATION);
+}
+
+// --- ثبت بازدید ---
+async function markStorySeen(item) {
+    if (item.ownerId === ME.uid) return;
+    if (Array.isArray(item.viewers) && item.viewers.includes(ME.uid)) return;
+    try {
+        await updateDoc(doc(db, 'stories', item.id), {
+            viewers: arrayUnion(ME.uid)
+        });
+    } catch (e) { /* بی‌اهمیت */ }
+}
+
+window.nextStory = function() {
+    clearTimeout(svTimer);
+    const group = storyGroups[svGroupIndex];
+    if (svItemIndex < group.items.length - 1) {
+        svItemIndex++;
+        showCurrentStory();
+    } else {
+        nextGroup();
+    }
+};
+
+window.prevStory = function() {
+    clearTimeout(svTimer);
+    if (svItemIndex > 0) {
+        svItemIndex--;
+        showCurrentStory();
+    } else if (svGroupIndex > 0) {
+        svGroupIndex--;
+        svItemIndex = storyGroups[svGroupIndex].items.length - 1;
+        showCurrentStory();
+    }
+};
+
+function nextGroup() {
+    if (svGroupIndex < storyGroups.length - 1) {
+        svGroupIndex++;
+        svItemIndex = 0;
+        showCurrentStory();
+    } else {
+        closeStoryViewer();
+    }
+}
+
+window.closeStoryViewer = function() {
+    clearTimeout(svTimer);
+    $('storyViewer').classList.remove('open');
+    renderStoryBar(); // بروزرسانی حلقه‌های دیده‌شده
+};
+
+// --- زمان نسبی ---
+function storyTimeAgo(ts) {
+    if (!ts || !ts.seconds) return '';
+    const diff = Date.now() / 1000 - ts.seconds;
+    if (diff < 60) return 'همین الان';
+    if (diff < 3600) return Math.floor(diff / 60) + ' دقیقه پیش';
+    return Math.floor(diff / 3600) + ' ساعت پیش';
+}
+```
+
+---
+
+سه تا اتصال لازم داره:
+
+۱) مطمئن شو این‌ها تو import فایربیست هستن (احتمالاً `addDoc`, `updateDoc`, `arrayUnion` رو نداری):
+```js
+import { ..., addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp } from "...firebase-firestore.js";
+```
+
+۲) داخل `switchMainTab`، آخر تابع این خط رو اضافه کن تا نوار با تعویض تب درست نشون داده/مخفی بشه:
+```js
+renderStoryBar();
+```
+
+۳) بعد از اینکه `ME` ست شد (داخل `onAuthStateChanged`، جایی که UI اصلی لود میشه)، یک‌بار صدا بزن:
+```js
+loadStories();
+```
+
+---
+
+و قوانین Firestore — این بلوک رو به rules اضافه کن:
+match /stories/{storyId} {
+  allow read: if request.auth != null;
+  allow create: if request.auth != null
+                && request.resource.data.ownerId == request.auth.uid;
+  // فقط آپدیت لیست بازدیدکننده‌ها برای بقیه مجازه
+  allow update: if request.auth != null
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewers']);
+  allow delete: if request.auth != null
+                && resource.data.ownerId == request.auth.uid;
+}
+
+
+دو نکته‌ای که باید چک کنی چون تو کد ندیدمشون: تابع `toast` و `escapeHtml`. اگه اسمشون فرق داره بگو تا تطبیق بدم. بعد از تست بگو نتیجه چی شد تا اگه چیزی موند درستش کنیم.
+
+باشه، پس بقیه‌ش رو هم آماده کنم. هنوز HTML نوار/ویوِر و CSS مونده. اول ساختار فعلی فایلت رو نگاه می‌کنم تا دقیقاً هم‌جای درست و هم‌سبک اضافه کنم.
+خوب شد. چند نکته از ساختار واقعی فایلت مهمه که کد JS قبلی رو باید کمی تطبیق بدم:
+
+- تابع `toast` وجود نداره؛ به‌جاش `showMockModal(text)` هست.
+- `escapeHtml` تایید نشد، پس خودمون یه نسخه امن اضافه می‌کنیم.
+- نوار استوری باید دقیقاً قبل از `#mainList` قرار بگیره.
+- توی `switchMainTab` تب چت‌ها `renderChatList(allMyChats)` صدا می‌زنه، پس همون‌جا `renderStoryBar()` رو می‌چسبونیم.
+
+### ۱) اصلاح اتصالات در کد JS قبلی
+هرجا تو کد استوری نوشتم `toast && toast(...)`، با این جایگزین کن:
+```js
+showMockModal('در حال آپلود استوری...');   // به جای toast آپلود
+showMockModal('استوری منتشر شد ✨');         // به جای toast موفقیت
+showMockModal('خطا در آپلود استوری');        // به جای toast خطا
+```
+
+و این helper رو یک‌بار اضافه کن (اگه `escapeHtml` جای دیگه‌ای نبود):
+```js
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+```
+
+### ۲) HTML نوار استوری
+دقیقاً **قبل از** این خط (line ~2118):
+```html
+<div id="mainList" class="chat-list"></div>
+```
+این رو بذار:
+```html
+<div id="storyBar" class="story-bar"></div>
+<input type="file" id="storyFileInput" accept="image/*,video/*"
+       style="display:none" onchange="handleStoryFile(event)">
+```
+
+### ۳) HTML ویوِر تمام‌صفحه
+این بلوک رو کنار بقیه مودال‌ها (نزدیک `#mockModal`) بذار:
+```html
+<div id="storyViewer" class="story-viewer">
+    <div class="sv-progress" id="storyProgress"></div>
+    <div class="sv-top">
+        <div class="sv-user">
+            <img id="svAvatar" class="sv-avatar" onerror="this.style.display='none'">
+            <div>
+                <div id="svName" class="sv-name"></div>
+                <div id="svTime" class="sv-time"></div>
+            </div>
+        </div>
+        <button class="sv-close" onclick="closeStoryViewer()">✕</button>
+    </div>
+    <img id="svImage" class="sv-image">
+    <div class="sv-nav sv-prev" onclick="prevStory()"></div>
+    <div class="sv-nav sv-next" onclick="nextStory()"></div>
+</div>
+```
+
+### ۴) CSS
+این رو ته بخش `<style>` اضافه کن (با سبک تیره/مدرن اپ):
+```css
+/* ---------- Story Bar ---------- */
+.story-bar {
+    display: flex; gap: 14px; padding: 14px 12px 10px;
+    overflow-x: auto; overflow-y: hidden;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    scrollbar-width: none;
+}
+.story-bar::-webkit-scrollbar { display: none; }
+.story-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; cursor: pointer; flex: 0 0 auto; width: 68px;
+}
+.story-ring {
+    width: 60px; height: 60px; border-radius: 50%;
+    padding: 2px; background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+}
+.story-ring.mine,
+.story-ring:not(.seen) {
+    background: linear-gradient(45deg,#f09433,#dc2743,#bc1888,#8a3ab9);
+}
+.story-ring.seen { background: rgba(255,255,255,.12); }
+.story-ring img {
+    width: 100%; height: 100%; border-radius: 50%;
+    object-fit: cover; border: 2px solid var(--bg, #14151a);
+    background: #2a2c34;
+}
+.story-add-badge {
+    position: absolute; bottom: 0; right: 0;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #2196f3; color: #fff; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg, #14151a);
+}
+.story-label {
+    font-size: 11px; color: #aeb3bd; max-width: 64px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    text-align: center;
+}
+```
+
+و بخش دوم CSS (ویوِر):
+```css
+/* ---------- Story Viewer ---------- */
+.story-viewer {
+    position: fixed; inset: 0; background: #000;
+    z-index: 9999; display: none; flex-direction: column;
+}
+.story-viewer.open { display: flex; }
+.sv-progress {
+    display: flex; gap: 4px; padding: 10px 12px 4px;
+}
+.sv-progress span {
+    flex: 1; height: 3px; border-radius: 3px;
+    background: rgba(255,255,255,.3); overflow: hidden;
+}
+.sv-progress span i {
+    display: block; height: 100%; width: 0;
+    background: #fff; border-radius: 3px;
+}
+.sv-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; color: #fff;
+}
+.sv-user { display: flex; align-items: center; gap: 10px; }
+.sv-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    object-fit: cover; background: #2a2c34;
+}
+.sv-name { font-size: 14px; font-weight: 600; }
+.sv-time { font-size: 11px; color: #cfd3da; }
+.sv-close {
+    background: none; border: none; color: #fff;
+    font-size: 22px; cursor: pointer; padding: 4px 8px;
+}
+.sv-image {
+    flex: 1; width: 100%; object-fit: contain; min-height: 0;
+}
+.sv-nav {
+    position: absolute; top: 60px; bottom: 0; width: 35%;
+    cursor: pointer; z-index: 2;
+}
+.sv-prev { left: 0; }
+.sv-next { right: 0; }
+```
+
+### ۵) صدا زدن `renderStoryBar` در `switchMainTab`
+تو خط مربوط به تب چت‌ها این‌طوری اصلاحش کن:
+```js
+if (tab === 'chats') {
+    $('listTitle').textContent = 'اتصالات فعال شما';
+    renderChatList(allMyChats);
+    renderStoryBar();   // ← این خط اضافه شد
+}
+```
+و برای بقیه تب‌ها هم بهتره نوار مخفی شه؛ چون داخل خود `renderStoryBar` چک `currentMainTab !== 'chats'` گذاشتیم، کافیه برای discover و leaders هم یه `renderStoryBar();` آخرش بذاری یا اصلاً اول تابع `switchMainTab` بعد از `currentMainTab = tab;` یک‌بار صداش بزنی.
+
+---
+
+این‌جوری تمام شد: زیرساخت، آپلود، نوار، ویوِر، CSS و اتصالات. تنها چیزی که هنوز ندیدم imports فایربیسته. می‌خوای الان imports و جای `onAuthStateChanged` (برای گذاشتن `loadStories()`) رو از فایل پیدا کنم تا دقیق بگم کجا بذاری؟
+
+عالی، حالا همه‌چی از فایل واقعیت تایید شد. خبر خوب: تمام توابع Firestore لازم (مخصوصاً `Timestamp`، `addDoc`، `deleteDoc`، `arrayUnion`، `getDocs`، `onSnapshot`) همگی در خط ۲۲۰۱ ایمپورت شده‌اند، پس نیازی به اضافه‌کردن import نیست. ✅
+
+### ۱) جای دقیق `loadStories()`
+داخل `onAuthStateChanged` (خط ~۲۴۶۵)، دقیقاً بعد از این خط:
+```js
+} else { ME = snap.data(); }
+```
+این رو اضافه کن:
+```js
+loadStories();   // ← بعد از پر شدن ME
+```
+چون `loadStories` به `ME.uid` و `db` نیاز داره و این نقطه اولین جاییه که `ME` معتبره.
+
+### ۲) ثابت‌ها (بالای بخش STATE، خط ~۲۲۲۷)
+کنار بقیه `let`ها این متغیرهای ماژول استوری رو اضافه کن:
+```js
+// ---------- STORIES STATE ----------
+let storiesUnsub = null;
+let allStories = [];        // [{ownerId, name, photo, items:[...] }]
+let storyViewerQueue = [];  // آرایه‌ای از آیتم‌های استوری برای نمایش
+let storyIndex = 0;
+let storyTimer = null;
+```
+
+### ۳) منطق کامل استوری (یک‌جا، ته `<script>`)
+این رو می‌فرستم در قطعه‌های زیر. تابع‌ها هم‌سبک کد اصلی (`$`, `db`, `ME`, `showMockModal`) نوشته شدن:
+
+```js
+// ============ STORIES: LOAD ============
+function loadStories() {
+    if (!ME) return;
+    if (storiesUnsub) storiesUnsub();
+    const cutoff = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+    const q = query(
+        collection(db, 'stories'),
+        where('createdAt', '>', cutoff),
+        orderBy('createdAt', 'desc')
+    );
+    storiesUnsub = onSnapshot(q, function (snap) {
+        const byOwner = {};
+        snap.forEach(function (d) {
+            const s = d.data();
+            s._id = d.id;
+            if (!byOwner[s.ownerId]) {
+                byOwner[s.ownerId] = {
+                    ownerId: s.ownerId,
+                    name: s.ownerName || 'کاربر',
+                    photo: s.ownerPhoto || '',
+                    items: []
+                };
+            }
+            byOwner[s.ownerId].items.push(s);
+        });
+        // مرتب‌سازی آیتم‌های هر کاربر از قدیم به جدید
+        Object.values(byOwner).forEach(function (g) {
+            g.items.sort(function (a, b) {
+                return (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0);
+            });
+        });
+        allStories = Object.values(byOwner);
+        if (currentMainTab === 'chats') renderStoryBar();
+    });
+}
+```
+
+```js
+// ============ STORIES: RENDER BAR ============
+function renderStoryBar() {
+    const bar = $('storyBar');
+    if (!bar) return;
+    if (currentMainTab !== 'chats') { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+
+    let html = '';
+    // آیتم «استوری من / افزودن»
+    const mine = allStories.find(function (g) { return g.ownerId === ME.uid; });
+    const myPhoto = (mine && mine.photo) || ME.photoURL || '';
+    html += '' +
+        '<div class="story-item" onclick="' +
+            (mine ? "openStoryViewer('" + ME.uid + "')" : "addStory()") + '">' +
+            '<div class="story-ring mine" style="position:relative">' +
+                '<img src="' + escapeHtml(myPhoto) + '">' +
+                (mine ? '' : '<span class="story-add-badge">+</span>') +
+            '</div>' +
+            '<span class="story-label">استوری شما</span>' +
+        '</div>';
+
+    // بقیه‌ی کاربران
+    allStories.forEach(function (g) {
+        if (g.ownerId === ME.uid) return;
+        const seen = g.items.every(function (it) {
+            return Array.isArray(it.viewers) && it.viewers.includes(ME.uid);
+        });
+        html += '' +
+            '<div class="story-item" onclick="openStoryViewer(\'' + g.ownerId + '\')">' +
+                '<div class="story-ring ' + (seen ? 'seen' : '') + '">' +
+                    '<img src="' + escapeHtml(g.photo) + '">' +
+                '</div>' +
+                '<span class="story-label">' + escapeHtml(g.name) + '</span>' +
+            '</div>';
+    });
+    bar.innerHTML = html;
+}
+```
+
+```js
+// ============ STORIES: UPLOAD ============
+function addStory() {
+    const inp = $('storyFileInput');
+    if (inp) inp.click();
+}
+
+async function handleStoryFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!ME) return;
+    showMockModal('در حال آپلود استوری...');
+    try {
+        const url = await uploadToImgBB(file);
+        const now = Timestamp.now();
+        const exp = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+        await addDoc(collection(db, 'stories'), {
+            ownerId: ME.uid,
+            ownerName: ME.displayName || 'کاربر',
+            ownerPhoto: ME.photoURL || '',
+            mediaUrl: url,
+            createdAt: now,
+            expiresAt: exp,
+            viewers: []
+        });
+        showMockModal('استوری منتشر شد ✨');
+    } catch (err) {
+        console.error(err);
+        showMockModal('خطا در آپلود استوری');
+    }
+}
+```
+
+اینا سه قطعه‌ی اول بودن (load/render/upload). قطعه‌ی آخر یعنی منطق **ویوِر** (`openStoryViewer`, `nextStory`, `prevStory`, `closeStoryViewer`, `markStorySeen` و تایمر نوار پیشرفت) رو بفرستم؟ همون پایانیه و بعدش کامل تمومه.
+
+خب، این هم قطعه‌ی آخر یعنی منطق کامل ویوِر:
+
+```js
+// ============ STORIES: VIEWER ============
+function openStoryViewer(ownerId) {
+    const group = allStories.find(function (g) { return g.ownerId === ownerId; });
+    if (!group || !group.items.length) return;
+
+    storyViewerQueue = group.items.slice();
+    storyIndex = 0;
+
+    const v = $('storyViewer');
+    if (!v) return;
+    v.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // نام و عکس صاحب استوری در هدر ویوِر
+    const head = $('storyViewerHead');
+    if (head) {
+        head.innerHTML =
+            '<img src="' + escapeHtml(group.photo) + '">' +
+            '<span>' + escapeHtml(group.name) + '</span>';
+    }
+    showCurrentStory();
+}
+
+function showCurrentStory() {
+    if (storyTimer) { clearTimeout(storyTimer); storyTimer = null; }
+
+    const item = storyViewerQueue[storyIndex];
+    if (!item) { closeStoryViewer(); return; }
+
+    const img = $('storyViewerImg');
+    if (img) img.src = item.mediaUrl;
+
+    // ساخت نوار پیشرفت بر اساس تعداد آیتم‌ها
+    const barsWrap = $('storyBars');
+    if (barsWrap) {
+        let bh = '';
+        for (let i = 0; i < storyViewerQueue.length; i++) {
+            const cls = i < storyIndex ? 'done' : (i === storyIndex ? 'active' : '');
+            bh += '<div class="story-bar-track"><div class="story-bar-fill ' + cls + '"></div></div>';
+        }
+        barsWrap.innerHTML = bh;
+    }
+
+    markStorySeen(item);
+
+    // ۵ ثانیه برای هر استوری، سپس بعدی
+    storyTimer = setTimeout(nextStory, 5000);
+}
+
+function nextStory() {
+    storyIndex++;
+    if (storyIndex >= storyViewerQueue.length) { closeStoryViewer(); return; }
+    showCurrentStory();
+}
+
+function prevStory() {
+    if (storyIndex <= 0) { showCurrentStory(); return; }
+    storyIndex--;
+    showCurrentStory();
+}
+
+function closeStoryViewer() {
+    if (storyTimer) { clearTimeout(storyTimer); storyTimer = null; }
+    const v = $('storyViewer');
+    if (v) v.style.display = 'none';
+    document.body.style.overflow = '';
+    storyViewerQueue = [];
+    storyIndex = 0;
+    // بروزرسانی حلقه‌ها (دیده‌شده‌ها خاکستری شوند)
+    if (currentMainTab === 'chats') renderStoryBar();
+}
+
+async function markStorySeen(item) {
+    if (!ME || !item || !item._id) return;
+    if (Array.isArray(item.viewers) && item.viewers.includes(ME.uid)) return;
+    if (item.ownerId === ME.uid) return;  // استوری خودم را ثبت بازدید نکن
+    try {
+        await updateDoc(doc(db, 'stories', item._id), {
+            viewers: arrayUnion(ME.uid)
+        });
+        item.viewers = item.viewers || [];
+        item.viewers.push(ME.uid);
+    } catch (err) {
+        console.error('seen err', err);
+    }
+}
+```
+
+و سه اتصال نهایی که نباید فراموش بشن:
+
+۱) **input مخفی فایل** (داخل `body`، هرجای دلخواه):
+```html
+<input type="file" id="storyFileInput" accept="image/*,video/*" style="display:none" onchange="handleStoryFile(event)">
+```
+
+۲) **ناوبری با کلیک در ویوِر** — روی نیمه‌ی چپ/راست عکس. توی `#storyViewer` این دو ناحیه رو بذار:
+```html
+<div class="story-nav left"  onclick="prevStory()"></div>
+<div class="story-nav right" onclick="nextStory()"></div>
+```
+
+۳) **پاکسازی هنگام سوییچ تب** — داخل `switchMainTab` که قبلاً هماهنگ کردیم، کافیه `renderStoryBar()` صدا زده بشه (که قبلاً اضافه کردی).
+
+حالا کل منطق استوری کامله: لود، نمایش نوار، آپلود، ویوِر با تایمر و نوار پیشرفت، ثبت بازدید و پاکسازی. اگه خواستی استایل‌های CSS ویوِر (`.story-nav`, `.story-bar-track`, `.story-bar-fill`) رو هم یک‌جا مرتب بفرستم، بگو تا بفرستم.
+
+بذار اول استایل‌های فعلی فایلت رو ببینم تا رنگ‌ها و متغیرها (مثل `--accent`، فونت و حالت دارک) هماهنگ دربیاد، نه اینکه استایل بی‌ربط بفرستم.
+تم مشخص شد: دارک لاکچری قرمز/مشکی با اکسنت طلایی (`--gold`, `--gold-light`, `--panel`). استایل‌ها رو دقیقاً با همین متغیرها هماهنگ کردم تا با بقیه‌ی اپ یکدست باشه:
+
+```css
+/* ============ STORIES ============ */
+
+/* --- نوار استوری بالای لیست چت --- */
+#storyBar {
+    display: flex;
+    gap: 14px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 1px solid rgba(191, 160, 85, 0.18);
+    background: var(--panel);
+    scrollbar-width: none;
+}
+#storyBar::-webkit-scrollbar { display: none; }
+
+.story-cell {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    width: 66px;
+}
+
+/* حلقه‌ی دور آواتار: طلایی برای دیده‌نشده */
+.story-ring {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    padding: 2.5px;
+    background: linear-gradient(45deg, var(--gold), var(--gold-light), var(--champagne));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* حلقه‌ی خاکستری برای استوری دیده‌شده */
+.story-ring.seen {
+    background: #3a2c2c;
+}
+.story-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--bg);
+}
+
+.story-name {
+    font-size: 11px;
+    color: var(--champagne);
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* سلول «استوری من» با علامت + */
+.story-add .story-ring {
+    background: var(--panel2);
+    position: relative;
+}
+.story-add .story-plus {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--bg);
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg);
+}
+```
+
+و حالا استایل ویوِر تمام‌صفحه:
+
+```css
+/* --- ویوِر تمام‌صفحه --- */
+#storyViewer {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    display: none;          /* با JS به flex تغییر می‌کند */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#storyViewerImg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* نوارهای پیشرفت بالای ویوِر */
+#storyBars {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    z-index: 3;
+}
+.story-bar-track {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.28);
+    overflow: hidden;
+}
+.story-bar-fill {
+    height: 100%;
+    width: 0;
+    background: var(--gold-light);
+    border-radius: 3px;
+}
+/* استوری‌های قبلی: پر */
+.story-bar-fill.done { width: 100%; }
+/* استوری فعلی: پرشدن انیمیشنی ۵ ثانیه‌ای */
+.story-bar-fill.active {
+    width: 100%;
+    animation: storyFill 5s linear forwards;
+}
+@keyframes storyFill {
+    from { width: 0; }
+    to   { width: 100%; }
+}
+```
+
+قطعه‌ی آخر یعنی هدر و نواحی ناوبری:
+
+```css
+/* هدر ویوِر: عکس و نام صاحب استوری */
+#storyViewerHead {
+    position: absolute;
+    top: 22px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 3;
+    color: #fff;
+    font-size: 13px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+#storyViewerHead img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid var(--gold);
+}
+
+/* دکمه بستن */
+#storyViewer .story-close {
+    position: absolute;
+    top: 20px;
+    right: 14px;
+    z-index: 4;
+    font-size: 26px;
+    color: #fff;
+    cursor: pointer;
+    line-height: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* نواحی نامرئی ناوبری چپ/راست */
+.story-nav {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 35%;
+    z-index: 2;
+    cursor: pointer;
+}
+.story-nav.left  { left: 0; }
+.story-nav.right { right: 0; }
+```
+
+نکته‌ی مهم درباره‌ی انیمیشن نوار: چون `.active` با انیمیشن CSS پر می‌شه و تایمر `setTimeout` هم ۵ ثانیه‌ست، این دو کاملاً هماهنگن. فقط حواست باشه که در `showCurrentStory` هر بار `barsWrap.innerHTML` بازسازی می‌شه، پس انیمیشن از صفر استارت می‌خوره و مشکلی نداره.
+
+اگه دکمه‌ی بستن رو هم می‌خوای، این خط رو داخل `#storyViewer` اضافه کن:
+```html
+<div class="story-close" onclick="closeStoryViewer()">&times;</div>
+```
+
+حالا کل قابلیت استوری از نظر استایل کامله. می‌خوای ساختار HTML نهایی `#storyViewer` رو یک‌جا و مرتب کنار هم بفرستم که فقط کپی کنی توی `body`؟
+
+
+باشه. اول HTML نهایی، بعد می‌ریم سراغ JS.
+
+این بلوک رو همون‌طور که قبلاً گفتیم بالای `#mainList` بذار (داخل تب گفتگوها):
+
+```html
+<!-- نوار استوری -->
+<div id="storyBar" class="story-bar"></div>
+<input type="file" id="storyFileInput" accept="image/*" style="display:none" onchange="handleStoryFile(event)">
+```
+
+و این بلوک رو یک‌جا، آخرِ `body` (کنار بقیه‌ی overlayها) بذار:
+
+```html
+<!-- ویوِر تمام‌صفحه استوری -->
+<div id="storyViewer">
+    <div id="storyBars"></div>
+    <div id="storyViewerHead">
+        <img id="svAvatar" src="" alt="">
+        <div>
+            <div class="sv-name" id="svName"></div>
+            <div class="sv-time" id="svTime"></div>
+        </div>
+    </div>
+    <div class="story-close" onclick="closeStoryViewer()">&times;</div>
+    <div class="story-nav left" onclick="prevStory()"></div>
+    <div class="story-nav right" onclick="nextStory()"></div>
+    <img id="storyViewerImg" src="" alt="">
+</div>
+```
+
+حالا بریم سراغ JS، که قلب کاره. اول state و لود (این قسمت رو قبلاً تأیید کردیم) و بعدش رندر نوار:
+
+```js
+/* ============ STORIES ============ */
+let storiesUnsub = null;
+let myStories = [];
+let storyGroups = [];
+let svGroupIndex = 0;
+let svItemIndex = 0;
+let svTimer = null;
+const STORY_DURATION = 5000;
+
+function loadStories() {
+    if (storiesUnsub) storiesUnsub();
+    const nowTs = Timestamp.now();
+    const q = query(collection(db, 'stories'), where('expiresAt', '>', nowTs));
+    storiesUnsub = onSnapshot(q, function(snap) {
+        const groupsMap = {};
+        myStories = [];
+        snap.forEach(function(d) {
+            const s = d.data();
+            s.id = d.id;
+            if (s.ownerId === ME.uid) myStories.push(s);
+            if (!groupsMap[s.ownerId]) {
+                groupsMap[s.ownerId] = {
+                    ownerId: s.ownerId,
+                    ownerName: s.ownerName || 'کاربر',
+                    ownerPhoto: s.ownerPhoto || null,
+                    items: []
+                };
+            }
+            groupsMap[s.ownerId].items.push(s);
+        });
+        storyGroups = Object.values(groupsMap).map(function(g) {
+            g.items.sort(function(a, b) {
+                return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+            });
+            return g;
+        });
+        storyGroups.sort(function(a, b) {
+            if (a.ownerId === ME.uid) return -1;
+            if (b.ownerId === ME.uid) return 1;
+            return 0;
+        });
+        renderStoryBar();
+    });
+}
+```
+
+رندر نوار. نکته‌ی کلیدی: «سلول من» همیشه با + نشون داده می‌شه؛ اگه استوری دارم، خودش هم قابل دیدنه:
+
+```js
+function renderStoryBar() {
+    const bar = $('storyBar');
+    if (!bar) return;
+    if (currentMainTab !== 'chats') { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    bar.innerHTML = '';
+
+    // سلول استوری من (همیشه اول، با دکمه +)
+    const myAvatar = getEffectiveAvatar();
+    const meGroupIndex = storyGroups.findIndex(g => g.ownerId === ME.uid);
+    const myCell = document.createElement('div');
+    myCell.className = 'story-cell story-add';
+    myCell.innerHTML =
+        '<div class="story-ring">' +
+            '<img src="' + (myAvatar || '') + '" alt="">' +
+            '<span class="story-plus">+</span>' +
+        '</div>' +
+        '<div class="story-name">استوری من</div>';
+    myCell.onclick = function() {
+        if (meGroupIndex >= 0) openStoryViewer(meGroupIndex);
+        else $('storyFileInput').click();
+    };
+    bar.appendChild(myCell);
+
+    // بقیه‌ی کاربرها
+    storyGroups.forEach(function(g, idx) {
+        if (g.ownerId === ME.uid) return;
+        const allSeen = g.items.every(it => (it.viewers || []).includes(ME.uid));
+        const cell = document.createElement('div');
+        cell.className = 'story-cell';
+        cell.innerHTML =
+            '<div class="story-ring' + (allSeen ? ' seen' : '') + '">' +
+                '<img src="' + (g.ownerPhoto || '') + '" alt="">' +
+            '</div>' +
+            '<div class="story-name">' + escapeHtml(g.ownerName) + '</div>';
+        cell.onclick = function() { openStoryViewer(idx); };
+        bar.appendChild(cell);
+    });
+}
+```
+
+برای اینکه نوار بعد از سوییچ به تب گفتگوها دوباره ظاهر بشه، داخل `switchMainTab` بعد از `renderChatList(allMyChats)` این رو صدا بزن:
+```js
+renderStoryBar();
+```
+
+و در `onAuthStateChanged` بعد از معتبر شدن `ME` (جایی که `ME = snap.data()` می‌شه) این خط رو اضافه کن:
+```js
+loadStories();
+```
+
+بعدی: آپلود استوری و ویوِر (نمایش، تایمر، ناوبری، ثبت بازدید). می‌خوای همین الان بفرستم؟
+
+بزن بریم. اول آپلود استوری بعد آپلود فایل از طریق ImgBB:
+
+```js
+async function handleStoryFile(event) {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        showMockModal('فقط عکس مجازه فعلاً.');
+        return;
+    }
+    try {
+        showMockModal('در حال آپلود استوری...');
+        const url = await uploadToImgBB(file);
+        const now = Timestamp.now();
+        const expires = Timestamp.fromMillis(now.toMillis() + 24 * 60 * 60 * 1000);
+        await addDoc(collection(db, 'stories'), {
+            ownerId: ME.uid,
+            ownerName: ME.name || 'کاربر',
+            ownerPhoto: getEffectiveAvatar() || null,
+            mediaUrl: url,
+            createdAt: now,
+            expiresAt: expires,
+            viewers: []
+        });
+        showMockModal('استوری گذاشته شد ✨');
+    } catch (e) {
+        console.error(e);
+        showMockModal('آپلود استوری ناموفق بود.');
+    }
+}
+```
+
+حالا ویوِر: باز کردن گروه و نمایش آیتم فعلی:
+
+```js
+function openStoryViewer(groupIndex) {
+    svGroupIndex = groupIndex;
+    svItemIndex = 0;
+    $('storyViewer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    showStoryItem();
+}
+
+function buildStoryBars(count) {
+    const wrap = $('storyBars');
+    wrap.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'sb-seg';
+        seg.innerHTML = '<div class="sb-fill" id="sbFill' + i + '"></div>';
+        wrap.appendChild(seg);
+    }
+}
+
+function showStoryItem() {
+    const group = storyGroups[svGroupIndex];
+    if (!group) { closeStoryViewer(); return; }
+    const item = group.items[svItemIndex];
+    if (!item) { nextGroup(); return; }
+
+    buildStoryBars(group.items.length);
+
+    // نوارهای قبلی پر، فعلی در حال پرشدن، بعدی‌ها خالی
+    for (let i = 0; i < group.items.length; i++) {
+        const fill = $('sbFill' + i);
+        if (!fill) continue;
+        if (i < svItemIndex) { fill.style.transition = 'none'; fill.style.width = '100%'; }
+        else if (i > svItemIndex) { fill.style.transition = 'none'; fill.style.width = '0%'; }
+    }
+
+    $('svAvatar').src = group.ownerPhoto || '';
+    $('svName').textContent = group.ownerName;
+    $('svTime').textContent = storyTimeAgo(item.createdAt);
+    $('storyViewerImg').src = item.mediaUrl;
+
+    // انیمیشن نوار فعلی
+    const cur = $('sbFill' + svItemIndex);
+    if (cur) {
+        cur.style.transition = 'none';
+        cur.style.width = '0%';
+        void cur.offsetWidth; // reflow
+        cur.style.transition = 'width ' + (STORY_DURATION / 1000) + 's linear';
+        cur.style.width = '100%';
+    }
+
+    clearTimeout(svTimer);
+    svTimer = setTimeout(nextStory, STORY_DURATION);
+
+    markStorySeen(item);
+}
+```
+
+ناوبری بین آیتم‌ها و گروه‌ها:
+
+```js
+function nextStory() {
+    clearTimeout(svTimer);
+    const group = storyGroups[svGroupIndex];
+    if (group && svItemIndex < group.items.length - 1) {
+        svItemIndex++;
+        showStoryItem();
+    } else {
+        nextGroup();
+    }
+}
+
+function prevStory() {
+    clearTimeout(svTimer);
+    if (svItemIndex > 0) {
+        svItemIndex--;
+        showStoryItem();
+    } else {
+        prevGroup();
+    }
+}
+
+function nextGroup() {
+    if (svGroupIndex < storyGroups.length - 1) {
+        svGroupIndex++;
+        svItemIndex = 0;
+        showStoryItem();
+    } else {
+        closeStoryViewer();
+    }
+}
+
+function prevGroup() {
+    if (svGroupIndex > 0) {
+        svGroupIndex--;
+        const g = storyGroups[svGroupIndex];
+        svItemIndex = g ? g.items.length - 1 : 0;
+        showStoryItem();
+    }
+}
+
+function closeStoryViewer() {
+    clearTimeout(svTimer);
+    $('storyViewer').classList.remove('open');
+    document.body.style.overflow = '';
+}
+```
+
+ثبت بازدید و زمان نسبی:
+
+```js
+async function markStorySeen(item) {
+    if (item.ownerId === ME.uid) return;
+    if ((item.viewers || []).includes(ME.uid)) return;
+    try {
+        await updateDoc(doc(db, 'stories', item.id), {
+            viewers: arrayUnion(ME.uid)
+        });
+    } catch (e) { console.error(e); }
+}
+
+function storyTimeAgo(ts) {
+    if (!ts?.seconds) return '';
+    const diff = Date.now() / 1000 - ts.seconds;
+    const h = Math.floor(diff / 3600);
+    if (h < 1) return Math.max(1, Math.floor(diff / 60)) + ' دقیقه پیش';
+    return h + ' ساعت پیش';
+}
+```
+
+مطمئن شو این importها بالای فایل (از Firestore) موجوده:
+```js
+import { ... arrayUnion, Timestamp, query, where, onSnapshot, addDoc, updateDoc, doc, collection } from '...firestore.js';
+```
+
+مرحله‌ی بعد: CSS کامل نوار + ویوِر با تم طلایی/سیاه. بفرستم؟
+
+ادامه میدم. اول CSS نوار استوری:
+
+```css
+/* ===== Story Bar ===== */
+#storyBar {
+    display: flex;
+    gap: 14px;
+    padding: 14px 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+    scrollbar-width: none;
+}
+#storyBar::-webkit-scrollbar { display: none; }
+
+.story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    cursor: pointer;
+    width: 66px;
+}
+
+.story-ring {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    padding: 2.5px;
+    background: linear-gradient(135deg, #f5d76e, #d4af37, #b8860b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease;
+}
+.story-ring.seen {
+    background: linear-gradient(135deg, #555, #3a3a3a);
+}
+.story-item:active .story-ring { transform: scale(0.92); }
+
+.story-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2.5px solid #0e0e0e;
+}
+
+.story-name {
+    font-size: 11px;
+    color: #cfcfcf;
+    max-width: 66px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* دکمه افزودن استوری خود کاربر */
+.story-add .story-ring {
+    background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+    position: relative;
+}
+.story-add .add-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f5d76e, #d4af37);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    border: 2px solid #0e0e0e;
+}
+```
+
+حالا CSS ویوِر تمام‌صفحه:
+
+```css
+/* ===== Story Viewer ===== */
+#storyViewer {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+}
+#storyViewer.open { display: flex; }
+
+.sv-bars {
+    display: flex;
+    gap: 4px;
+    padding: 10px 12px 6px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+}
+.sb-seg {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+}
+.sb-fill {
+    height: 100%;
+    width: 0%;
+    background: #fff;
+    border-radius: 3px;
+}
+
+.sv-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 22px 14px 10px;
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent);
+}
+.sv-header img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid rgba(212,175,55,0.6);
+}
+.sv-meta { flex: 1; line-height: 1.2; }
+#svName { font-size: 14px; font-weight: 600; color: #fff; }
+#svTime { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+.sv-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 26px;
+    cursor: pointer;
+    padding: 0 6px;
+}
+
+.sv-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+#storyViewerImg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* مناطق نامرئی ناوبری */
+.sv-nav {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 33%;
+    z-index: 4;
+    cursor: pointer;
+}
+.sv-nav.left { left: 0; }
+.sv-nav.right { right: 0; }
+```
+
+و HTML مارک‌آپ ویوِر (یک بار در body، بیرون از کانتینرها):
+
+```html
+<div id="storyViewer">
+    <div class="sv-bars" id="storyBars"></div>
+    <div class="sv-header">
+        <img id="svAvatar" src="" alt="">
+        <div class="sv-meta">
+            <div id="svName"></div>
+            <div id="svTime"></div>
+        </div>
+        <button class="sv-close" onclick="closeStoryViewer()">&times;</button>
+    </div>
+    <div class="sv-stage">
+        <img id="storyViewerImg" src="" alt="">
+        <div class="sv-nav left" onclick="prevStory()"></div>
+        <div class="sv-nav right" onclick="nextStory()"></div>
+    </div>
+</div>
+```
+
+مرحله بعد: تابع `loadStories` با `onSnapshot`، گروه‌بندی استوری‌ها بر اساس کاربر، تابع `renderStoryBar`، و متغیرهای گلوبال. بفرستم؟
+
+بذار اول کد فعلی رو ببینم تا توابع دقیقاً با ساختار موجود (نام متغیرها، `db`، `uploadToImgBB`، کاربر فعلی) هماهنگ باشن.
+عالی، ساختار مشخص شد: `ME`, `db`, `uploadToImgBB`, `$`. حالا کد JavaScript کامل:
+
+اول مطمئن شو این import‌های Firestore در بالای فایل (کنار بقیه import‌ها) موجودن:
+
+```js
+import {
+    getFirestore, collection, query, where, orderBy,
+    onSnapshot, addDoc, doc, updateDoc, arrayUnion,
+    serverTimestamp, Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+```
+
+حالا متغیرهای گلوبال (نزدیک `let ME = null;` بذار):
+
+```js
+// ---------- Stories State ----------
+let allStories = [];          // همه استوری‌های فعال (خام از Firestore)
+let groupedStories = [];      // گروه‌بندی شده بر اساس ownerId
+let storyViewerQueue = [];    // استوری‌های کاربر در حال نمایش
+let storyIndex = 0;           // اندیس استوری فعلی در صف
+let storyTimer = null;        // تایمر پیشرفت خودکار
+let storiesUnsub = null;      // لغو اشتراک onSnapshot
+const STORY_DURATION = 5000;  // ۵ ثانیه
+```
+
+تابع `loadStories` با `onSnapshot` بلادرنگ:
+
+```js
+function loadStories() {
+    if (!ME) return;
+    if (storiesUnsub) storiesUnsub(); // جلوگیری از اشتراک تکراری
+
+    const cutoff = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+    const q = query(
+        collection(db, 'stories'),
+        where('expiresAt', '>', Timestamp.now()),
+        orderBy('expiresAt', 'asc')
+    );
+
+    storiesUnsub = onSnapshot(q, (snap) => {
+        allStories = [];
+        snap.forEach(d => {
+            const s = d.data();
+            // فیلتر ایمنی: فقط استوری‌های ساخته‌شده در ۲۴ ساعت اخیر
+            if (s.createdAt && s.createdAt.toMillis() >= cutoff.toMillis()) {
+                allStories.push({ id: d.id, ...s });
+            }
+        });
+        groupStories();
+        renderStoryBar();
+    }, (err) => {
+        console.error('loadStories error:', err);
+    });
+}
+```
+
+تابع گروه‌بندی بر اساس صاحب استوری (خودِ کاربر همیشه اول):
+
+```js
+function groupStories() {
+    const map = new Map();
+    allStories.forEach(s => {
+        if (!map.has(s.ownerId)) {
+            map.set(s.ownerId, {
+                ownerId: s.ownerId,
+                ownerName: s.ownerName,
+                ownerPhoto: s.ownerPhoto,
+                items: []
+            });
+        }
+        map.get(s.ownerId).items.push(s);
+    });
+
+    // مرتب‌سازی استوری‌های هر کاربر بر اساس زمان ساخت
+    map.forEach(g => {
+        g.items.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+        // آیا همه استوری‌های این کاربر دیده شده‌اند؟
+        g.allSeen = g.items.every(it =>
+            Array.isArray(it.viewers) && it.viewers.includes(ME.uid)
+        );
+    });
+
+    groupedStories = Array.from(map.values());
+
+    // خودِ کاربر را به ابتدای لیست منتقل کن
+    groupedStories.sort((a, b) => {
+        if (a.ownerId === ME.uid) return -1;
+        if (b.ownerId === ME.uid) return 1;
+        if (a.allSeen !== b.allSeen) return a.allSeen ? 1 : -1; // دیده‌نشده‌ها جلوتر
+        return 0;
+    });
+}
+```
+
+تابع `renderStoryBar` که نوار بالای لیست چت را می‌سازد:
+
+```js
+function renderStoryBar() {
+    const bar = $('storyBar');
+    if (!bar || !ME) return;
+
+    let html = '';
+
+    // دکمه «افزودن استوری» کاربر فعلی
+    const myPhoto = ME.photoURL || 'https://i.ibb.co/2y7H8/default-avatar.png';
+    html += `
+        <div class="story-item story-add" onclick="pickStoryFile()">
+            <div class="story-ring seen">
+                <img src="${myPhoto}" alt="">
+                <span class="add-badge">+</span>
+            </div>
+            <span class="story-name">استوری شما</span>
+        </div>`;
+
+    // بقیه استوری‌ها (به جز خود کاربر که جداگانه نمایش داده می‌شود اگر داشته باشد)
+    groupedStories.forEach(g => {
+        // اگر صاحب استوری خود کاربر است و دکمه افزودن داریم،
+        // باز هم نمایشش می‌دهیم تا روی استوری خودش هم بتواند کلیک کند
+        const ringClass = g.allSeen ? 'story-ring seen' : 'story-ring';
+        const displayName = g.ownerId === ME.uid ? 'استوری شما' : (g.ownerName || 'کاربر');
+        const photo = g.ownerPhoto || 'https://i.ibb.co/2y7H8/default-avatar.png';
+
+        // برای خود کاربر فقط وقتی استوری دارد یک آیتم جدا بساز
+        if (g.ownerId === ME.uid) return; // در نسخه ساده، استوری خود را از طریق دکمه افزودن باز می‌کنیم
+
+        html += `
+            <div class="story-item" onclick="openStoryViewer('${g.ownerId}')">
+                <div class="${ringClass}">
+                    <img src="${photo}" alt="">
+                </div>
+                <span class="story-name">${escapeHtml(displayName)}</span>
+            </div>`;
+    });
+
+    bar.innerHTML = html;
+}
+
+// کمکی برای جلوگیری از تزریق HTML در نام‌ها
+function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+```
+
+اتصال به چرخه حیات — این دو خط را اضافه کن:
+
+در `onAuthStateChanged` بعد از مقداردهی `ME` و آماده شدن UI:
+```js
+loadStories();
+```
+
+در `switchMainTab`، داخل شاخه `chats`:
+```js
+if (tab === 'chats') {
+    $('listTitle').textContent = 'اتصالات فعال شما';
+    renderChatList(allMyChats);
+    renderStoryBar();   // ← این خط را اضافه کن
+}
+```
+
+و HTML نوار استوری بالای لیست چت (داخل تب گفتگوها، قبل از کانتینر لیست):
+```html
+<div id="storyBar"></div>
+```
+
+نکته امنیتی: `escapeHtml` را برای جلوگیری از XSS روی نام کاربران اضافه کردم چون نام‌ها از Firestore می‌آیند.
+
+مرحله بعد: توابع آپلود (`pickStoryFile` + `handleStoryFile`)، نمایش (`openStoryViewer`)، ناوبری (`nextStory`/`prevStory`) و ثبت بازدید (`markStorySeen`). بفرستم؟
+
+بریم برای بخش دوم: آپلود، نمایش، ناوبری و ثبت بازدید.
+
+اول مطمئن شم signature دقیق `showMockModal` و `uploadToImgBB` رو درست استفاده می‌کنم:
+تایید شد: `showMockModal(text)` تک‌آرگومانی و `uploadToImgBB(file)` آدرس عکس را برمی‌گرداند. حالا بخش دوم:
+
+انتخاب و آپلود فایل استوری:
+
+```js
+// باز کردن دیالوگ انتخاب فایل
+window.pickStoryFile = function() {
+    const input = $('storyFileInput');
+    if (input) input.click();
+};
+
+// هندل کردن فایل انتخاب‌شده و آپلود
+window.handleStoryFile = async function(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = ''; // ریست تا انتخاب مجدد همان فایل ممکن باشد
+    if (!file || !ME) return;
+
+    // فقط عکس مجاز است
+    if (!file.type.startsWith('image/')) {
+        showMockModal('فقط تصویر مجاز است');
+        return;
+    }
+
+    showMockModal('در حال آپلود استوری...');
+    try {
+        const url = await uploadToImgBB(file);
+        const expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+
+        await addDoc(collection(db, 'stories'), {
+            ownerId: ME.uid,
+            ownerName: ME.displayName || 'کاربر',
+            ownerPhoto: ME.photoURL || null,
+            mediaUrl: url,
+            type: 'image',
+            createdAt: serverTimestamp(),
+            expiresAt: expiresAt,
+            viewers: []
+        });
+
+        showMockModal('استوری منتشر شد ✨');
+        // onSnapshot خودش renderStoryBar را تازه می‌کند
+    } catch (e) {
+        console.error('story upload error:', e);
+        showMockModal('خطا در آپلود استوری');
+    }
+};
+```
+
+باز کردن ویوِر استوری برای یک کاربر:
+
+```js
+window.openStoryViewer = function(ownerId) {
+    const group = groupedStories.find(g => g.ownerId === ownerId);
+    if (!group || !group.items.length) return;
+
+    storyViewerQueue = group.items.slice(); // کپی صف
+    storyIndex = 0;
+
+    const viewer = $('storyViewer');
+    if (viewer) viewer.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    showStoryItem();
+};
+```
+
+نمایش استوری فعلی + ساخت progress bar + تایمر خودکار:
+
+```js
+function showStoryItem() {
+    clearTimeout(storyTimer);
+    const item = storyViewerQueue[storyIndex];
+    if (!item) { closeStoryViewer(); return; }
+
+    // عکس
+    const img = $('storyViewerImg');
+    if (img) img.src = item.mediaUrl;
+
+    // هدر
+    const av = $('svAvatar');
+    if (av) av.src = item.ownerPhoto || 'https://i.ibb.co/2y7H8/default-avatar.png';
+    const nm = $('svName');
+    if (nm) nm.textContent = item.ownerName || 'کاربر';
+    const tm = $('svTime');
+    if (tm) tm.textContent = storyTimeAgo(item.createdAt);
+
+    // نوارهای پیشرفت (یک سگمنت برای هر استوری)
+    buildStoryBars();
+
+    // ثبت بازدید
+    markStorySeen(item);
+
+    // رفتن خودکار به استوری بعدی
+    storyTimer = setTimeout(nextStory, STORY_DURATION);
+}
+
+function buildStoryBars() {
+    const wrap = $('storyBars');
+    if (!wrap) return;
+    let html = '';
+    for (let i = 0; i < storyViewerQueue.length; i++) {
+        let fillClass = '';
+        if (i < storyIndex) fillClass = 'full';        // قبلی‌ها پر
+        else if (i === storyIndex) fillClass = 'active'; // فعلی در حال پر شدن
+        html += `<div class="sb-seg"><div class="sb-fill ${fillClass}"></div></div>`;
+    }
+    wrap.innerHTML = html;
+}
+
+// زمان نسبی استوری
+function storyTimeAgo(ts) {
+    if (!ts) return '';
+    const ms = Date.now() - ts.toMillis();
+    const min = Math.floor(ms / 60000);
+    if (min < 60) return `${min} دقیقه پیش`;
+    const hr = Math.floor(min / 60);
+    return `${hr} ساعت پیش`;
+}
+```
+
+ناوبری بین استوری‌ها و بستن ویوِر:
+
+```js
+window.nextStory = function() {
+    storyIndex++;
+    if (storyIndex >= storyViewerQueue.length) {
+        closeStoryViewer();
+        return;
+    }
+    showStoryItem();
+};
+
+window.prevStory = function() {
+    if (storyIndex <= 0) {
+        showStoryItem(); // در اولین استوری، فقط ری‌استارت می‌شود
+        return;
+    }
+    storyIndex--;
+    showStoryItem();
+};
+
+window.closeStoryViewer = function() {
+    clearTimeout(storyTimer);
+    const viewer = $('storyViewer');
+    if (viewer) viewer.classList.remove('show');
+    document.body.style.overflow = '';
+    renderStoryBar(); // به‌روزرسانی حلقه‌ها (دیده‌شده‌ها)
+};
+```
+
+ثبت بازدید در Firestore:
+
+```js
+async function markStorySeen(item) {
+    if (!item || !ME) return;
+    if (item.ownerId === ME.uid) return; // استوری خودمان را علامت نمی‌زنیم
+    if (Array.isArray(item.viewers) && item.viewers.includes(ME.uid)) return; // قبلاً دیده
+
+    try {
+        await updateDoc(doc(db, 'stories', item.id), {
+            viewers: arrayUnion(ME.uid)
+        });
+        // به‌روزرسانی محلی تا حلقه فوراً «seen» شود
+        if (!Array.isArray(item.viewers)) item.viewers = [];
+        item.viewers.push(ME.uid);
+    } catch (e) {
+        console.error('markStorySeen error:', e);
+    }
+}
+```
+
+input مخفی فایل (یک‌بار در `body` اضافه کن):
+```html
+<input type="file" id="storyFileInput" accept="image/*"
+       style="display:none" onchange="handleStoryFile(event)">
+```
+
+نکته: تابع‌هایی که از `onclick` در HTML صدا زده می‌شوند (`pickStoryFile`, `handleStoryFile`, `openStoryViewer`, `nextStory`, `prevStory`, `closeStoryViewer`) را روی `window` گذاشتم چون فایل از ماژول ES استفاده می‌کند و توابع داخل scope ماژول از HTML قابل دسترسی نیستند.
+
+مرحله بعد: HTML کامل ویوِر تمام‌صفحه + CSS هماهنگ با تم طلایی‑مشکی پروژه. بفرستم؟
+
+بذار اول ساختار و متغیرهای تم پروژه رو از فایل چک کنم تا CSS دقیقاً هماهنگ باشه.
+تم رو گرفتم. حالا HTML نوار استوری، input مخفی، و ویوِر تمام‌صفحه + CSS هماهنگ با پالت طلایی‑مشکی.
+
+### ۱) نوار استوری (داخل تب چت‌ها، بالای `#mainList`)
+```html
+<div id="storyBar" class="story-bar"></div>
+```
+
+### ۲) input مخفی فایل (داخل `body`)
+```html
+<input type="file" id="storyFileInput" accept="image/*"
+       style="display:none" onchange="handleStoryFile(event)">
+```
+
+### ۳) ویوِر تمام‌صفحه (انتهای `body`، کنار بقیه مودال‌ها)
+```html
+<div id="storyViewer" class="story-viewer">
+    <!-- نوارهای پیشرفت -->
+    <div id="storyBars" class="story-bars"></div>
+
+    <!-- هدر صاحب استوری -->
+    <div class="sv-header">
+        <img id="svAvatar" class="sv-avatar" alt="">
+        <div class="sv-meta">
+            <div id="svName" class="sv-name"></div>
+            <div id="svTime" class="sv-time"></div>
+        </div>
+        <button class="sv-close" onclick="closeStoryViewer()">✕</button>
+    </div>
+
+    <!-- تصویر استوری -->
+    <img id="storyViewerImg" class="sv-img" alt="">
+
+    <!-- نواحی کلیک برای ناوبری -->
+    <div class="sv-nav sv-left" onclick="prevStory()"></div>
+    <div class="sv-nav sv-right" onclick="nextStory()"></div>
+</div>
+```
+
+### ۴) CSS هماهنگ با تم
+```css
+/* ---- نوار استوری ---- */
+.story-bar {
+    display: flex;
+    gap: 14px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(191, 160, 85, 0.15);
+}
+.story-bar::-webkit-scrollbar { display: none; }
+
+.story-item {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    width: 68px;
+}
+
+/* حلقه دور آواتار: طلایی برای دیده‌نشده، خاکستری برای دیده‌شده */
+.story-ring {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.story-ring.seen {
+    background: #3a2f2f;
+}
+.story-ring.add {
+    background: var(--panel2);
+    border: 2px dashed var(--gold);
+}
+
+.story-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--bg);
+}
+
+.story-add-icon {
+    font-size: 26px;
+    color: var(--gold);
+    line-height: 1;
+}
+
+.story-name {
+    font-size: 11px;
+    color: var(--champagne);
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+```
+
+```css
+/* ---- ویوِر تمام‌صفحه ---- */
+.story-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.story-viewer.show { display: flex; }
+
+/* تصویر */
+.sv-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* نوارهای پیشرفت */
+.story-bars {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    z-index: 3;
+}
+.sb-seg {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+}
+.sb-fill {
+    height: 100%;
+    width: 0;
+    background: var(--gold-light);
+    border-radius: 3px;
+}
+.sb-fill.full { width: 100%; }
+.sb-fill.active {
+    width: 100%;
+    transition: width var(--story-dur, 5s) linear;
+}
+```
+
+```css
+/* هدر */
+.sv-header {
+    position: absolute;
+    top: 22px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 3;
+}
+.sv-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+}
+.sv-meta { flex: 1; min-width: 0; }
+.sv-name {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.sv-time {
+    color: rgba(255,255,255,.75);
+    font-size: 11px;
+}
+.sv-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+/* نواحی کلیک ناوبری */
+.sv-nav {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    z-index: 2;
+    cursor: pointer;
+}
+.sv-left { left: 0; }
+.sv-right { right: 0; }
+```
+
+### ۵) ثابت تایمر (هماهنگ با CSS و JS)
+چون CSS از `--story-dur` و JS از `STORY_DURATION` استفاده می‌کند، این دو را هماهنگ نگه دار. بالای بلاک JS استوری:
+
+```js
+const STORY_DURATION = 5000; // ۵ ثانیه
+
+// و هنگام شروع هر استوری، مقدار CSS هم ست شود
+document.documentElement.style.setProperty('--story-dur', (STORY_DURATION / 1000) + 's');
+```
+
+نکته مهم برای انیمیشن نوار پیشرفت: کلاس `active` با `transition` کار می‌کند، پس باید بعد از درج در DOM با یک reflow کوتاه فعال شود تا انیمیشن از صفر اجرا شود. در `buildStoryBars` این تکه را اضافه کن:
+
+```js
+function buildStoryBars() {
+    const wrap = $('storyBars');
+    if (!wrap) return;
+    let html = '';
+    for (let i = 0; i < storyViewerQueue.length; i++) {
+        let fillClass = i < storyIndex ? 'full' : '';
+        html += `<div class="sb-seg"><div class="sb-fill ${fillClass}"></div></div>`;
+    }
+    wrap.innerHTML = html;
+
+    // فعال‌سازی انیمیشن سگمنت فعلی بعد از reflow
+    const fills = wrap.querySelectorAll('.sb-fill');
+    const cur = fills[storyIndex];
+    if (cur) {
+        void cur.offsetWidth;      // اجبار به reflow
+        cur.classList.add('active');
+    }
+}
+```
+
+مرحله بعد: تابع `renderStoryBar()` که `groupedStories` را به حلقه‌های نوار تبدیل می‌کند (با تشخیص دیده‌شده/نشده و دکمه «افزودن استوری» خودِ کاربر). بفرستم؟
+
+بذار اول مطمئن شم چه چیزهایی از Firestore توی فایلت import شده (مثل `serverTimestamp`, `Timestamp`, `query`, `where`, `onSnapshot`, `arrayUnion`) تا کد دقیقاً با همون‌ها بنویسم نه چیزی که موجود نیست.
+همه چیز لازم موجوده: `query`, `where`, `onSnapshot`, `serverTimestamp`, `Timestamp`, `arrayUnion`, `addDoc`, `updateDoc`. پس کد رو دقیقاً با همین‌ها می‌نویسم.
+
+این هم بقیه منطق استوری، کامل و آماده اتصال:
+
+### State ها (بالای فایل، کنار بقیه متغیرهای گلوبال)
+```js
+let allStories = [];        // همه استوری‌های فعال (خام)
+let groupedStories = {};    // groupedStories[uid] = { name, photoURL, items: [] }
+let storiesUnsub = null;    // برای قطع listener
+
+let storyViewerItems = [];  // استوری‌های گروهی که داره نمایش داده میشه
+let storyIndex = 0;
+let storyTimer = null;
+const STORY_DURATION = 5000; // ۵ ثانیه
+```
+
+### `loadStories()` — دریافت زنده + گروه‌بندی
+```js
+function loadStories() {
+    if (!ME) return;
+    if (storiesUnsub) storiesUnsub(); // listener قبلی رو ببند
+
+    // فقط استوری‌هایی که هنوز منقضی نشدن
+    const q = query(
+        collection(db, 'stories'),
+        where('expiresAt', '>', Timestamp.now()),
+        orderBy('expiresAt', 'asc')
+    );
+
+    storiesUnsub = onSnapshot(q, (snap) => {
+        allStories = [];
+        snap.forEach(d => {
+            allStories.push({ id: d.id, ...d.data() });
+        });
+
+        // گروه‌بندی بر اساس صاحب استوری
+        groupedStories = {};
+        allStories.forEach(s => {
+            if (!groupedStories[s.ownerId]) {
+                groupedStories[s.ownerId] = {
+                    name: s.ownerName || 'کاربر',
+                    photoURL: s.ownerPhoto || '',
+                    items: []
+                };
+            }
+            groupedStories[s.ownerId].items.push(s);
+        });
+
+        // مرتب‌سازی استوری‌های هر گروه بر اساس زمان ساخت (قدیمی → جدید)
+        Object.values(groupedStories).forEach(g => {
+            g.items.sort((a, b) => {
+                const ta = a.createdAt?.toMillis?.() || 0;
+                const tb = b.createdAt?.toMillis?.() || 0;
+                return ta - tb;
+            });
+        });
+
+        // فقط اگه تب چت‌ها بازه نوار رو رفرش کن
+        if (currentMainTab === 'chats') renderStoryBar();
+    }, (err) => {
+        console.error('loadStories error:', err);
+    });
+}
+```
+
+### `handleStoryFile(event)` — آپلود استوری
+```js
+async function handleStoryFile(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = ''; // ریست تا انتخاب دوباره همون فایل کار کنه
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showMockModal('فقط تصویر مجاز است');
+        return;
+    }
+
+    showMockModal('در حال آپلود استوری...');
+
+    try {
+        const url = await uploadToImgBB(file);
+
+        // انقضا: ۲۴ ساعت بعد
+        const expires = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+
+        await addDoc(collection(db, 'stories'), {
+            ownerId: ME.uid,
+            ownerName: ME.displayName || 'کاربر',
+            ownerPhoto: ME.photoURL || '',
+            mediaUrl: url,
+            type: 'image',
+            createdAt: serverTimestamp(),
+            expiresAt: expires,
+            viewers: []
+        });
+
+        showMockModal('استوری منتشر شد ✨');
+    } catch (e) {
+        console.error('story upload error:', e);
+        showMockModal('خطا در آپلود استوری');
+    }
+}
+```
+
+### ویوِر: باز کردن، حرکت، بستن
+```js
+function openStoryViewer(ownerId) {
+    const group = groupedStories[ownerId];
+    if (!group || !group.items.length) return;
+
+    storyViewerItems = group.items;
+    storyIndex = 0;
+
+    const viewer = $('storyViewer');
+    viewer.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    showStoryItem();
+}
+
+function showStoryItem() {
+    clearTimeout(storyTimer);
+
+    const item = storyViewerItems[storyIndex];
+    if (!item) { closeStoryViewer(); return; }
+
+    // عکس
+    $('storyViewerImg').src = item.mediaUrl;
+
+    // هدر
+    $('svAvatar').src = item.ownerPhoto || './default-avatar.png';
+    $('svName').textContent = item.ownerName || 'کاربر';
+    $('svTime').textContent = storyTimeAgo(item.createdAt);
+
+    // نوارهای پیشرفت
+    buildStoryBars();
+
+    // ثبت بازدید
+    markStorySeen(item);
+
+    // رفتن به بعدی بعد از مدت مشخص
+    storyTimer = setTimeout(nextStory, STORY_DURATION);
+}
+
+function nextStory() {
+    clearTimeout(storyTimer);
+    if (storyIndex < storyViewerItems.length - 1) {
+        storyIndex++;
+        showStoryItem();
+    } else {
+        closeStoryViewer();
+    }
+}
+
+function prevStory() {
+    clearTimeout(storyTimer);
+    if (storyIndex > 0) {
+        storyIndex--;
+        showStoryItem();
+    } else {
+        showStoryItem(); // از اول همین استوری
+    }
+}
+
+function closeStoryViewer() {
+    clearTimeout(storyTimer);
+    const viewer = $('storyViewer');
+    viewer.classList.remove('show');
+    document.body.style.overflow = '';
+    storyViewerItems = [];
+    storyIndex = 0;
+
+    // بعد از بستن، نوار رو رفرش کن تا حلقه‌ها seen بشن
+    if (currentMainTab === 'chats') renderStoryBar();
+}
+```
+
+### نوارهای پیشرفت بالای ویوِر
+```js
+function buildStoryBars() {
+    const wrap = $('storyBars');
+    if (!wrap) return;
+
+    let html = '';
+    for (let i = 0; i < storyViewerItems.length; i++) {
+        let cls = '';
+        if (i < storyIndex) cls = 'full';     // قبلی‌ها پر
+        else if (i === storyIndex) cls = 'active'; // فعلی در حال پرشدن
+        html += `<div class="sb-seg"><div class="sb-fill ${cls}"></div></div>`;
+    }
+    wrap.innerHTML = html;
+
+    // فعال‌کردن انیمیشن نوار فعلی از صفر (reflow trick)
+    const activeFill = wrap.querySelector('.sb-fill.active');
+    if (activeFill) {
+        activeFill.style.transition = 'none';
+        activeFill.style.width = '0%';
+        // reflow اجباری
+        void activeFill.offsetWidth;
+        activeFill.style.transition = `width ${STORY_DURATION}ms linear`;
+        activeFill.style.width = '100%';
+    }
+}
+```
+
+### ثبت بازدید
+```js
+async function markStorySeen(item) {
+    if (!item || !ME) return;
+    if (item.ownerId === ME.uid) return;              // استوری خودم نه
+    if (Array.isArray(item.viewers) && item.viewers.includes(ME.uid)) return; // قبلاً دیده
+
+    try {
+        await updateDoc(doc(db, 'stories', item.id), {
+            viewers: arrayUnion(ME.uid)
+        });
+        // لوکال هم به‌روز کن تا حلقه فوری seen بشه
+        if (!item.viewers) item.viewers = [];
+        item.viewers.push(ME.uid);
+    } catch (e) {
+        console.error('markStorySeen error:', e);
+    }
+}
+```
+
+### زمان نسبی
+```js
+function storyTimeAgo(ts) {
+    if (!ts || !ts.toMillis) return 'همین حالا';
+    const diff = Date.now() - ts.toMillis();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'همین حالا';
+    if (min < 60) return `${min} دقیقه پیش`;
+    const hr = Math.floor(min / 60);
+    return `${hr} ساعت پیش`;
+}
+```
+
+دو تا اتصال هم لازمه (همون‌هایی که قبلاً گفتیم):
+
+- توی `onAuthStateChanged` بعد از `ME = snap.data();` این خط:
+  ```js
+  loadStories();
+  ```
+- توی `switchMainTab` داخل شاخه `chats` بعد از `renderChatList(allMyChats)`:
+  ```js
+  renderStoryBar();
+  ```
+
+یک نکته مهم درباره Firestore: کوئری `where('expiresAt', '>', ...)` به‌همراه `orderBy('expiresAt')` نیاز به ایندکس داره ولی چون فیلد و ترتیب روی یک فیلده، خودش خودکار درست می‌شه و خطا نمی‌ده.
+
+می‌خوای حالا HTML و CSS نهایی نوار + ویوِر رو هم یکجا و تمیز بفرستم که کامل بشه؟
+
+بفرما، HTML و CSS کامل و تمیز با همون تم دارک قرمز/طلایی پروژه.
+
+### ۱) HTML نوار استوری
+این دو خط رو دقیقاً **بالای** `<div id="mainList" class="chat-list">` بذار:
+
+```html
+<!-- نوار استوری -->
+<div id="storyBar" class="story-bar"></div>
+<input type="file" id="storyFileInput" accept="image/*" style="display:none" onchange="handleStoryFile(event)">
+```
+
+### ۲) HTML ویوِر تمام‌صفحه
+این بلوک رو **انتهای `<body>`** (کنار بقیه overlay/modalها) بذار:
+
+```html
+<!-- ویوِر استوری -->
+<div id="storyViewer" class="story-viewer">
+    <div id="storyBars" class="story-bars"></div>
+
+    <div class="sv-header">
+        <img id="svAvatar" class="sv-avatar" alt="">
+        <div class="sv-meta">
+            <div id="svName" class="sv-name"></div>
+            <div id="svTime" class="sv-time"></div>
+        </div>
+        <button class="sv-close" onclick="closeStoryViewer()">✕</button>
+    </div>
+
+    <img id="storyViewerImg" class="sv-img" alt="">
+
+    <div class="sv-nav sv-left" onclick="prevStory()"></div>
+    <div class="sv-nav sv-right" onclick="nextStory()"></div>
+</div>
+```
+
+### ۳) CSS کامل
+این بلوک رو ته `<style>` پروژه اضافه کن:
+
+```css
+/* ===== نوار استوری ===== */
+.story-bar {
+    display: flex;
+    gap: 14px;
+    padding: 14px 12px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(191, 160, 85, 0.12);
+}
+.story-bar::-webkit-scrollbar { display: none; }
+
+.story-item {
+    flex: 0 0 auto;
+    width: 66px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+/* حلقه دور آواتار */
+.story-ring {
+    position: relative;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    padding: 2.5px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .15s ease;
+}
+.story-item:active .story-ring { transform: scale(0.94); }
+
+/* دیده‌شده: حلقه خاموش */
+.story-ring.seen {
+    background: rgba(120, 110, 100, 0.35);
+}
+
+/* حالت افزودن استوری */
+.story-ring.add {
+    background: var(--panel2);
+    border: 1.5px dashed rgba(191, 160, 85, 0.55);
+    padding: 0;
+}
+
+.story-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--bg);
+    background: var(--bg2);
+}
+
+/* آیکن + وسط حلقه افزودن */
+.story-add-icon {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--gold-light);
+    line-height: 1;
+}
+
+/* بِج + گوشه آواتار خودم وقتی استوری دارم */
+.story-add-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #1a0e0e;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg);
+    line-height: 1;
+}
+
+.story-name {
+    font-size: 11px;
+    color: var(--txt);
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    opacity: .85;
+}
+
+/* ===== ویوِر تمام‌صفحه ===== */
+.story-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.story-viewer.show { display: flex; }
+
+.sv-img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* نوارهای پیشرفت بالا */
+.story-bars {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    z-index: 3;
+}
+.sb-seg {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.28);
+    overflow: hidden;
+}
+.sb-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--gold-light);
+}
+.sb-fill.full { width: 100%; }
+.sb-fill.active { width: 0%; }
+
+/* هدر صاحب استوری */
+.sv-header {
+    position: absolute;
+    top: 24px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 3;
+}
+.sv-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(191, 160, 85, 0.7);
+    background: var(--bg2);
+}
+.sv-meta { flex: 1; min-width: 0; }
+.sv-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.sv-time {
+    font-size: 11px;
+    color: rgba(255,255,255,.7);
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.sv-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    opacity: .85;
+}
+.sv-close:active { opacity: .5; }
+
+/* نواحی لمسی چپ/راست */
+.sv-nav {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 35%;
+    z-index: 2;
+    cursor: pointer;
+}
+.sv-left { left: 0; }
+.sv-right { right: 0; }
+```
+
+### ۴) دو تابع کوچک باقی‌مانده در JS
+این دوتا رو هم اضافه کن که زنجیره کامل بشه:
+
+```js
+// باز کردن انتخاب فایل برای استوری خودم
+function triggerStoryUpload() {
+    $('storyFileInput').click();
+}
+
+// رندر نوار استوری
+function renderStoryBar() {
+    const bar = $('storyBar');
+    if (!bar || !ME) return;
+
+    let html = '';
+
+    // سلول استوری خودم
+    const mine = groupedStories[ME.uid];
+    if (mine && mine.items.length) {
+        html += `
+            <div class="story-item" onclick="openStoryViewer('${ME.uid}')">
+                <div class="story-ring">
+                    <img src="${ME.photoURL || './default-avatar.png'}" alt="">
+                    <span class="story-add-badge" onclick="event.stopPropagation(); triggerStoryUpload()">+</span>
+                </div>
+                <span class="story-name">استوری شما</span>
+            </div>`;
+    } else {
+        html += `
+            <div class="story-item" onclick="triggerStoryUpload()">
+                <div class="story-ring add">
+                    <span class="story-add-icon">+</span>
+                </div>
+                <span class="story-name">استوری شما</span>
+            </div>`;
+    }
+
+    // بقیه کاربران
+    Object.keys(groupedStories).forEach(uid => {
+        if (uid === ME.uid) return;
+        const g = groupedStories[uid];
+
+        // اگه همه آیتم‌ها دیده شده باشن، حلقه خاموش
+        const allSeen = g.items.every(it =>
+            Array.isArray(it.viewers) && it.viewers.includes(ME.uid)
+        );
+
+        html += `
+            <div class="story-item" onclick="openStoryViewer('${uid}')">
+                <div class="story-ring ${allSeen ? 'seen' : ''}">
+                    <img src="${g.photoURL || './default-avatar.png'}" alt="">
+                </div>
+                <span class="story-name">${escapeHtml(g.name)}</span>
+            </div>`;
+    });
+
+    bar.innerHTML = html;
+}
+```
+
+اگه `escapeHtml` توی فایل نداری، این مینیمالش هست:
+
+```js
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+```
+
+حالا کل چرخه کامله: آپلود ← لیست زنده ← نوار ← ویوِر با نوار پیشرفت ← ثبت بازدید ← خاموش‌شدن حلقه. می‌خوای تست سریع منطق دیده‌شدن (seen) رو با هم چک کنیم یا قانون امنیتی Firestore برای کالکشن `stories` رو هم برات بنویسم؟
+
+
+بذار اول ساختار واقعی کالکشن `stories` و فیلدهاش رو از فایل پروژه ببینم تا قانون امنیتی دقیقاً با همون شکل داده‌ها بخونه، نه حدسی.
+فایل نشون داد که کد Stories هنوز به پروژه اضافه نشده. پس باهوشانه‌ترین کار اینه که قانون Firestore رو **بر اساس همون ساختار داده‌ای که با هم طراحی کردیم** بنویسم.
+
+---
+
+### `firestore.rules` — قانون کالکشن Stories
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── کاربران ──────────────────────────────────────
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == uid;
+    }
+
+    // ── چت‌ها ─────────────────────────────────────────
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid in resource.data.members;
+
+      match /messages/{msgId} {
+        allow read, write: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+      }
+    }
+
+    // ── استوری‌ها ─────────────────────────────────────
+    match /stories/{storyId} {
+
+      // هر لاگین‌کرده‌ای می‌تونه استوری‌های زنده رو بخونه
+      allow read: if request.auth != null;
+
+      // فقط صاحب استوری می‌تونه ایجاد کنه
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerId
+        && request.resource.data.keys().hasAll(['ownerId','imageUrl','createdAt','expiresAt'])
+        && request.resource.data.viewers is list
+        && request.resource.data.expiresAt is timestamp;
+
+      // فقط دو عملیات مجاز روی استوری موجود:
+      // ۱) صاحب استوری حذف کنه
+      // ۲) هر کاربری uid خودش رو به viewers اضافه کنه (markStorySeen)
+      allow update: if request.auth != null
+        && (
+          request.auth.uid == resource.data.ownerId
+          ||
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewers'])
+            && request.resource.data.viewers.size() == resource.data.viewers.size() + 1
+            && request.auth.uid in request.resource.data.viewers
+          )
+        );
+
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.ownerId;
+    }
+  }
+}
+```
+
+---
+
+### چرا این قانون‌ها درسته؟
+
+| عملیات | مجاز برای |
+|---|---|
+| `read` | هر کاربر لاگین‌کرده |
+| `create` | فقط اگه `ownerId == uid` خودته + فیلدهای اجباری موجود باشن |
+| `update` | صاحب استوری (هر چیزی) **یا** هر کس فقط `viewers` رو +۱ کنه |
+| `delete` | فقط صاحب استوری |
+
+نکته مهم: قانون `update` برای `viewers` دقیقاً با `arrayUnion` در `markStorySeen` هماهنگه — نمی‌ذاره کسی `viewers` رو کم کنه یا چیز دیگه‌ای تغییر بده.
+
+---
+
+این فایل رو در ریشه پروژه کنار `firebase.json` بذار و با `firebase deploy --only firestore:rules` دیپلوی کن.
+
+باشه داداش، بذار اول دقیق ببینم ساختار فعلی فایل چطوریه تا کد رو طوری بنویسم که دقیق بهش بچسبه (مخصوصاً `onAuthStateChanged`، `switchMainTab` و جایی که `mainList` هست).
+خب داداش، حالا دقیق می‌دونم باید کجا وصلش کنم. بریم سراغ کد کامل. سه بخش می‌فرستم: **JS**، **HTML**، **CSS**. بعدش هم بهت می‌گم دقیقاً کجا بذاریشون.
+
+---
+
+## ۱) کد JavaScript
+
+این رو یه جای مناسب توی بلوک `<script type="module">` (مثلاً قبل از `onAuthStateChanged`) اضافه کن:
+
+```js
+/* ===================== STORIES ===================== */
+let storiesUnsub = null;
+let storyGroups = [];      // [{ ownerId, ownerName, ownerPhoto, items:[], allSeen }]
+let svGroupIndex = 0;
+let svItemIndex = 0;
+let svTimer = null;
+const STORY_DURATION = 5000;
+
+// لود استوری‌ها به صورت زنده
+function loadStories() {
+    if (!ME) return;
+    if (storiesUnsub) storiesUnsub();
+
+    const q = query(
+        collection(db, 'stories'),
+        where('expiresAt', '>', Timestamp.now()),
+        orderBy('expiresAt', 'asc')
+    );
+
+    storiesUnsub = onSnapshot(q, (snap) => {
+        const all = [];
+        snap.forEach(d => all.push({ id: d.id, ...d.data() }));
+
+        // گروه‌بندی بر اساس صاحب استوری
+        const map = {};
+        all.forEach(s => {
+            if (!map[s.ownerId]) {
+                map[s.ownerId] = {
+                    ownerId: s.ownerId,
+                    ownerName: s.ownerName || 'کاربر',
+                    ownerPhoto: s.ownerPhoto || '',
+                    items: []
+                };
+            }
+            map[s.ownerId].items.push(s);
+        });
+
+        storyGroups = Object.values(map).map(g => {
+            g.items.sort((a, b) => {
+                const ta = a.createdAt?.seconds || 0;
+                const tb = b.createdAt?.seconds || 0;
+                return ta - tb;
+            });
+            g.allSeen = g.items.every(it => (it.viewers || []).includes(ME.uid));
+            return g;
+        });
+
+        // استوری خودم همیشه اول
+        storyGroups.sort((a, b) => {
+            if (a.ownerId === ME.uid) return -1;
+            if (b.ownerId === ME.uid) return 1;
+            if (a.allSeen !== b.allSeen) return a.allSeen ? 1 : -1;
+            return 0;
+        });
+
+        renderStoryBar();
+    }, (err) => {
+        console.error('loadStories error:', err);
+    });
+}
+
+// رندر نوار استوری
+function renderStoryBar() {
+    const bar = $('storyBar');
+    if (!bar || !ME) return;
+
+    let html = '';
+
+    // آیتم «استوری من» با دکمه +
+    const myGroup = storyGroups.find(g => g.ownerId === ME.uid);
+    const myPhoto = ME.photoURL || '';
+    html += `
+        <div class="story-item" onclick="${myGroup ? `openStoryViewer('${ME.uid}')` : 'pickStoryFile()'}">
+            <div class="story-ring add ${myGroup && !myGroup.allSeen ? '' : 'seen'}">
+                <img class="story-avatar" src="${escapeHtml(myPhoto)}" alt="">
+                <div class="story-add-badge" onclick="event.stopPropagation(); pickStoryFile()">+</div>
+            </div>
+            <div class="story-name">استوری من</div>
+        </div>
+    `;
+
+    // بقیه کاربرها
+    storyGroups.forEach(g => {
+        if (g.ownerId === ME.uid) return;
+        html += `
+            <div class="story-item" onclick="openStoryViewer('${g.ownerId}')">
+                <div class="story-ring ${g.allSeen ? 'seen' : ''}">
+                    <img class="story-avatar" src="${escapeHtml(g.ownerPhoto)}" alt="">
+                </div>
+                <div class="story-name">${escapeHtml(g.ownerName)}</div>
+            </div>
+        `;
+    });
+
+    bar.innerHTML = html;
+}
+
+// باز کردن انتخاب فایل
+window.pickStoryFile = function() {
+    const inp = $('storyFileInput');
+    if (inp) inp.click();
+};
+
+// آپلود استوری
+window.handleStoryFile = async function(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showMockModal('فقط عکس می‌تونی استوری بذاری.');
+        return;
+    }
+
+    try {
+        showMockModal('در حال آپلود استوری...');
+        const url = await uploadToImgBB(file);
+        if (!url) { showMockModal('آپلود ناموفق بود. دوباره تلاش کن.'); return; }
+
+        const expires = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+        await addDoc(collection(db, 'stories'), {
+            ownerId: ME.uid,
+            ownerName: ME.displayName || 'کاربر',
+            ownerPhoto: ME.photoURL || '',
+            mediaUrl: url,
+            type: 'image',
+            createdAt: serverTimestamp(),
+            expiresAt: expires,
+            viewers: []
+        });
+
+        showMockModal('استوری شما با موفقیت ثبت شد.');
+    } catch (e) {
+        console.error('handleStoryFile error:', e);
+        showMockModal('خطا در ثبت استوری.');
+    }
+};
+
+// باز کردن viewer
+window.openStoryViewer = function(ownerId) {
+    const idx = storyGroups.findIndex(g => g.ownerId === ownerId);
+    if (idx === -1) return;
+    svGroupIndex = idx;
+
+    // اولین آیتم دیده‌نشده، وگرنه اولی
+    const items = storyGroups[idx].items;
+    const firstUnseen = items.findIndex(it => !(it.viewers || []).includes(ME.uid));
+    svItemIndex = firstUnseen === -1 ? 0 : firstUnseen;
+
+    $('storyViewer').classList.add('open');
+    showStoryItem();
+};
+
+// نمایش آیتم فعلی
+function showStoryItem() {
+    const group = storyGroups[svGroupIndex];
+    if (!group) { closeStoryViewer(); return; }
+    const item = group.items[svItemIndex];
+    if (!item) { closeStoryViewer(); return; }
+
+    $('svAvatar').src = group.ownerPhoto || '';
+    $('svName').textContent = group.ownerName || 'کاربر';
+    $('svTime').textContent = storyTimeAgo(item.createdAt);
+    $('storyViewerImg').src = item.mediaUrl || '';
+
+    buildStoryBars();
+    markStorySeen(item);
+
+    if (svTimer) clearTimeout(svTimer);
+    svTimer = setTimeout(nextStory, STORY_DURATION);
+}
+
+// ساخت نوارهای پیشرفت
+function buildStoryBars() {
+    const group = storyGroups[svGroupIndex];
+    const bars = $('storyBars');
+    if (!bars || !group) return;
+
+    let html = '';
+    group.items.forEach((_, i) => {
+        let fill = '0%';
+        if (i < svItemIndex) fill = '100%';
+        html += `
+            <div class="sb-seg">
+                <div class="sb-fill" style="width:${fill};${i === svItemIndex ? `animation: sbGrow ${STORY_DURATION}ms linear forwards;` : ''}"></div>
+            </div>
+        `;
+    });
+    bars.innerHTML = html;
+}
+
+// استوری بعدی
+window.nextStory = function() {
+    const group = storyGroups[svGroupIndex];
+    if (!group) { closeStoryViewer(); return; }
+
+    if (svItemIndex < group.items.length - 1) {
+        svItemIndex++;
+        showStoryItem();
+    } else if (svGroupIndex < storyGroups.length - 1) {
+        svGroupIndex++;
+        svItemIndex = 0;
+        showStoryItem();
+    } else {
+        closeStoryViewer();
+    }
+};
+
+// استوری قبلی
+window.prevStory = function() {
+    if (svItemIndex > 0) {
+        svItemIndex--;
+        showStoryItem();
+    } else if (svGroupIndex > 0) {
+        svGroupIndex--;
+        svItemIndex = storyGroups[svGroupIndex].items.length - 1;
+        showStoryItem();
+    }
+};
+
+// بستن viewer
+window.closeStoryViewer = function() {
+    if (svTimer) clearTimeout(svTimer);
+    svTimer = null;
+    $('storyViewer').classList.remove('open');
+};
+
+// ثبت بازدید
+async function markStorySeen(item) {
+    if (!item || !ME) return;
+    if ((item.viewers || []).includes(ME.uid)) return;
+    try {
+        await updateDoc(doc(db, 'stories', item.id), {
+            viewers: arrayUnion(ME.uid)
+        });
+        item.viewers = [...(item.viewers || []), ME.uid];
+    } catch (e) {
+        console.error('markStorySeen error:', e);
+    }
+}
+
+// زمان نسبی
+function storyTimeAgo(ts) {
+    if (!ts || !ts.seconds) return '';
+    const diff = Date.now() - ts.seconds * 1000;
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'همین الان';
+    if (min < 60) return `${min} دقیقه پیش`;
+    const hr = Math.floor(min / 60);
+    return `${hr} ساعت پیش`;
+}
+/* =================== END STORIES =================== */
+```
+
+---
+
+## ۲) اتصال به کد موجود
+
+دو تا تغییر کوچیک توی فایل:
+
+داخل `onAuthStateChanged` بعد از خطی که `ME = snap.data();` هست، این رو اضافه کن:
+
+```js
+ME = snap.data();
+loadStories();   // <-- این خط اضافه شود
+```
+
+داخل `switchMainTab`، توی شاخه `chats`، بعد از `renderChatList(allMyChats)`:
+
+```js
+if (tab === 'chats') { $('listTitle').textContent = 'اتصالات فعال شما'; renderChatList(allMyChats); renderStoryBar(); }
+```
+
+---
+
+می‌خوای الان **HTML** و **CSS** رو هم بفرستم تا کامل بشه؟ یا اول این JS رو جاگذاری می‌کنی و بعد بریم سراغ بقیه؟
+
+بریم. اول بذار ساختار فایل رو نگاه کنم تا دقیق بگم HTML کجا قرار بگیره.
+خوبه، ساختار رو دیدم. استوری‌بار باید بالای `#mainList` بشینه. بریم.
+
+---
+
+## ۳) کد HTML
+
+خطِ `2117` رو که اینه:
+
+```html
+<div class="list-title" id="listTitle">اتصالات شما</div>
+<div id="mainList" class="chat-list"></div>
+```
+
+به این تغییر بده (یعنی `#storyBar` بین این دو تا اضافه میشه):
+
+```html
+<div class="list-title" id="listTitle">اتصالات شما</div>
+
+<!-- نوار استوری -->
+<div id="storyBar" class="story-bar"></div>
+
+<div id="mainList" class="chat-list"></div>
+```
+
+بعد، قبل از تگ پایانی `</body>` (خط ۳۲۷۳) این دو بلوک رو اضافه کن:
+
+```html
+<!-- اینپوت مخفی انتخاب فایل استوری -->
+<input type="file" id="storyFileInput" accept="image/*" style="display:none" onchange="handleStoryFile(event)">
+
+<!-- نمایشگر تمام‌صفحه استوری -->
+<div id="storyViewer" class="story-viewer">
+    <div class="sv-bars" id="storyBars"></div>
+
+    <div class="sv-header">
+        <img class="sv-avatar" id="svAvatar" src="" alt="">
+        <div class="sv-meta">
+            <div class="sv-name" id="svName"></div>
+            <div class="sv-time" id="svTime"></div>
+        </div>
+        <div class="sv-close" onclick="closeStoryViewer()">&times;</div>
+    </div>
+
+    <img class="sv-image" id="storyViewerImg" src="" alt="">
+
+    <!-- نواحی لمسی ناوبری -->
+    <div class="sv-nav sv-prev" onclick="prevStory()"></div>
+    <div class="sv-nav sv-next" onclick="nextStory()"></div>
+</div>
+```
+
+---
+
+## ۴) کد CSS
+
+این رو ته بلوک `<style>` اضافه کن:
+
+```css
+/* ===================== STORIES ===================== */
+.story-bar {
+    display: flex;
+    gap: 14px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    scrollbar-width: none;
+}
+.story-bar::-webkit-scrollbar { display: none; }
+
+.story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 66px;
+}
+
+.story-ring {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(45deg, var(--gold), #ffd86b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.story-ring.seen {
+    background: rgba(255,255,255,.18);
+}
+
+.story-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--bg);
+    background: var(--panel2);
+}
+
+.story-add-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #1a1a1a;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    border: 2px solid var(--bg);
+}
+
+.story-name {
+    font-size: 11px;
+    color: var(--muted, #aaa);
+    max-width: 64px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Viewer ---- */
+.story-viewer {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.story-viewer.open { display: flex; }
+
+.sv-bars {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    z-index: 3;
+}
+.sb-seg {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(255,255,255,.3);
+    overflow: hidden;
+}
+.sb-fill {
+    height: 100%;
+    width: 0;
+    background: #fff;
+    border-radius: 3px;
+}
+@keyframes sbGrow {
+    from { width: 0%; }
+    to   { width: 100%; }
+}
+
+.sv-header {
+    position: absolute;
+    top: 26px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 3;
+}
+.sv-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,.6);
+    background: var(--panel2);
+}
+.sv-meta { flex: 1; }
+.sv-name { color: #fff; font-size: 14px; font-weight: 600; }
+.sv-time { color: rgba(255,255,255,.7); font-size: 11px; }
+.sv-close {
+    color: #fff;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 6px;
+}
+
+.sv-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.sv-nav {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 35%;
+    z-index: 2;
+    cursor: pointer;
+}
+.sv-prev { left: 0; }
+.sv-next { right: 0; }
+/* =================== END STORIES =================== */
+```
+
+---
+
+## جمع‌بندی جای‌گذاری
+
+- JS: داخل `<script type="module">` قبل از `onAuthStateChanged`
+- خط `loadStories()` بعد از `ME = snap.data()`
+- `renderStoryBar()` توی شاخه `chats` تابع `switchMainTab`
+- `#storyBar` بین `#listTitle` و `#mainList`
+- بلوک `input` و `#storyViewer` قبل از `</body>`
+- CSS ته `<style>`
+
+یه نکته: کد از توابعی مثل `query`, `where`, `orderBy`, `addDoc`, `updateDoc`, `arrayUnion`, `Timestamp`, `serverTimestamp` و هلپر `escapeHtml` استفاده می‌کنه. اگه هرکدوم توی importهای Firebase پروژه‌ت نبود بهم بگو تا چکش کنیم. می‌خوای importها رو برات بررسی کنم؟
+
+خبر خوب، تقریباً همه importهای مورد نیازِ Firestore توی پروژه موجوده. بذار `escapeHtml` رو هم چک کنم چون توی رندر استوری‌بار ازش استفاده می‌کنیم.
+نتیجه بررسی:
+
+importهای Firestore — کاملاً اوکیه. این خط همه‌چیزی که لازم داریم رو داره:
+
+```js
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, limit, increment, arrayUnion, arrayRemove, deleteDoc, Timestamp } from "...firebase-firestore.js";
+```
+
+پس `query`, `where`, `orderBy`, `addDoc`, `updateDoc`, `arrayUnion`, `Timestamp`, `serverTimestamp`, `onSnapshot` همه موجودن. مشکلی نداریم.
+
+هلپرها:
+- `$(id)` موجوده (خط ۲۲۴۹) ✅
+- `showMockModal` موجوده (خط ۲۳۷۳) ✅
+- `uploadToImgBB` موجوده (خط ۲۳۵۸) ✅
+- `escapeHtml` موجود نیست ❌
+
+پس فقط یک کار مونده: چون `escapeHtml` توی پروژه نیست، باید خودمون اضافه‌اش کنیم وگرنه `renderStoryBar()` ارور می‌ده.
+
+این تابع کوچیک رو یه جای امن (مثلاً درست بعد از تعریف `$` در خط ۲۲۴۹) اضافه کن:
+
+```js
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+```
+
+با این اضافه‌شدن، کل کد استوری بدون هیچ وابستگیِ گمشده‌ای کار می‌کنه.
+
+می‌خوای کل کد JavaScript استوری (همون `loadStories`, `renderStoryBar`, `handleStoryFile`, `openStoryViewer` و بقیه) رو یکجا و تمیز برات بفرستم که فقط کپی‌پیست کنی؟
+
+میرم ساختار فعلی استوری ویوِر، چت و حضور آنلاین رو از فایل دربیارم تا کدها رو دقیق وصل کنم.
+خوبه، حالا وضعیت روشنه. کد استوری توی فایل نیست پس از صفر می‌سازیمش، ولی چت و presence پایه دارن.
+
+برای اینکه ویس‌مسیج و وضعیت آنلاین رو دقیق به همون ساختار فعلی وصل کنم (نه اینکه چیز موازی بسازم)، باید بدنه کامل `sendMessage`، HTML نوار ورودی چت، و کد فعلی presence/typing رو ببینم. بذار اینا رو دربیارم:
+بذار دقیقاً همون رنج‌هایی که نیازه رو دربیارم تا کد رو روی ساختار واقعی بنویسم.
+عالی، حالا ساختار واقعی رو دارم. شروع می‌کنم از **ویس‌مسیج** چون کاملاً خودبسنده‌ست و همه قلاب‌هاش (`#inputBar`، `pushMessage`، `renderMessage`) رو الان دقیق می‌شناسم.
+
+نکته مهم قبل از کد: ویس باید جایی ذخیره بشه. توی کدت تصویر چطوری آپلود میشه؟ چون باید ببینم Firebase Storage داری یا تصاویر رو base64 توی Firestore می‌ریزی. این تعیین می‌کنه ویس رو هم همونجوری ذخیره کنم که هماهنگ باشه.
+
+فعلاً کد ویس‌مسیج رو طوری می‌نویسم که با **Firebase Storage** کار کنه (روش استاندارد و سبک برای صدا). اگه Storage نداری بگو تا نسخه base64 بدم.
+
+## ۱. HTML — دکمه ضبط ویس به نوار ورودی
+
+داخل `#inputBar` (خط ۲۱۶۳)، بعد از دکمه تصویر این دکمه رو اضافه کن:
+
+```html
+<button class="action-btn" id="btnVoice" onmousedown="startVoiceRecord(event)" onmouseup="stopVoiceRecord(event)" onmouseleave="cancelVoiceRecord(event)" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord(event)" title="نگه‌دار و حرف بزن">🎤</button>
+```
+
+و درست بعد از `#inputBar` این نوار وضعیت ضبط رو بذار:
+
+```html
+<div id="voiceRecordBar" class="voice-record-bar">
+    <button class="vr-cancel" onclick="cancelVoiceRecord()">✕</button>
+    <span class="vr-dot"></span>
+    <span id="voiceTimer" class="vr-timer">0:00</span>
+    <span class="vr-hint">برای ارسال رها کن، بکش بالا برای لغو</span>
+</div>
+```
+
+## ۲. CSS — استایل هماهنگ با تم طلایی-مشکی
+
+```css
+.voice-record-bar{
+    display:none; align-items:center; gap:10px;
+    padding:10px 14px; margin:0 8px 8px;
+    background:rgba(255,0,0,0.06);
+    border:1px solid rgba(255,80,80,0.25);
+    border-radius:14px;
+}
+.voice-record-bar.show{ display:flex; }
+.vr-dot{ width:10px; height:10px; border-radius:50%; background:#ff4b4b; animation:vrPulse 1s infinite; }
+@keyframes vrPulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
+.vr-timer{ color:#ff6b6b; font-weight:700; font-variant-numeric:tabular-nums; }
+.vr-hint{ color:var(--gold); opacity:.6; font-size:12px; margin-right:auto; }
+.vr-cancel{ background:none; border:none; color:#ff6b6b; font-size:18px; cursor:pointer; }
+
+/* پخش‌کننده ویس داخل حباب پیام */
+.voice-msg{ display:flex; align-items:center; gap:10px; min-width:180px; }
+.voice-msg button{
+    width:38px; height:38px; border-radius:50%;
+    background:var(--gold); color:#000; border:none;
+    font-size:16px; cursor:pointer; flex-shrink:0;
+}
+.voice-msg .vm-bar{ flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.15); position:relative; overflow:hidden; }
+.voice-msg .vm-prog{ position:absolute; inset:0; width:0%; background:var(--gold); }
+.voice-msg .vm-time{ font-size:12px; color:var(--gold); opacity:.8; font-variant-numeric:tabular-nums; }
+```
+
+## ۳. JavaScript — منطق ضبط، آپلود و پخش
+
+این بلوک رو نزدیک بقیه توابع چت اضافه کن:
+
+```js
+// ===== Voice Messages =====
+let mediaRecorder = null, voiceChunks = [], voiceStartTime = 0, voiceTimerInt = null, voiceCancelled = false;
+
+window.startVoiceRecord = async function(e){
+    if (e) e.preventDefault();
+    if (!activeChatId) return;
+    voiceCancelled = false;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        voiceChunks = [];
+        mediaRecorder.ondataavailable = ev => { if (ev.data.size > 0) voiceChunks.push(ev.data); };
+        mediaRecorder.onstop = handleVoiceStop;
+        mediaRecorder.start();
+        voiceStartTime = Date.now();
+        $('voiceRecordBar').classList.add('show');
+        voiceTimerInt = setInterval(updateVoiceTimer, 200);
+    } catch (err) {
+        toast('دسترسی به میکروفون رد شد', '⚠️');
+    }
+};
+
+function updateVoiceTimer(){
+    const s = Math.floor((Date.now() - voiceStartTime) / 1000);
+    $('voiceTimer').textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+
+window.stopVoiceRecord = function(e){
+    if (e) e.preventDefault();
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+    clearInterval(voiceTimerInt);
+    $('voiceRecordBar').classList.remove('show');
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+};
+
+window.cancelVoiceRecord = function(e){
+    if (e) e.preventDefault();
+    voiceCancelled = true;
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        clearInterval(voiceTimerInt);
+        $('voiceRecordBar').classList.remove('show');
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    }
+};
+
+async function handleVoiceStop(){
+    const duration = Math.round((Date.now() - voiceStartTime) / 1000);
+    if (voiceCancelled || duration < 1 || voiceChunks.length === 0) return;
+    const blob = new Blob(voiceChunks, { type: 'audio/webm' });
+
+    // آپلود به Firebase Storage
+    const path = `voices/${activeChatId}/${ME.uid}_${Date.now()}.webm`;
+    const sRef = storageRef(storage, path);
+    try {
+        toast('در حال ارسال ویس...', '🎤');
+        await uploadBytes(sRef, blob);
+        const url = await getDownloadURL(sRef);
+        await pushMessage({ type: 'voice', voiceUrl: url, voiceDuration: duration });
+    } catch (err) {
+        toast('خطا در ارسال ویس', '⚠️');
+    }
+}
+
+window.playVoice = function(btn, url){
+    let audio = btn._audio;
+    if (!audio) {
+        audio = new Audio(url);
+        btn._audio = audio;
+        const prog = btn.parentElement.querySelector('.vm-prog');
+        const timeEl = btn.parentElement.querySelector('.vm-time');
+        audio.ontimeupdate = () => {
+            if (audio.duration) prog.style.width = (audio.currentTime/audio.duration*100) + '%';
+            const s = Math.floor(audio.currentTime);
+            timeEl.textContent = Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+        };
+        audio.onended = () => { btn.textContent = '▶'; prog.style.width = '0%'; };
+    }
+    if (audio.paused) { audio.play(); btn.textContent = '⏸'; }
+    else { audio.pause(); btn.textContent = '▶'; }
+};
+```
+
+## ۴. رندر ویس داخل `renderMessage`
+
+داخل `renderMessage` جایی که نوع پیام رو تشخیص می‌دی (مثل `m.type === 'image'`)، این شاخه رو اضافه کن:
+
+```js
+} else if (m.type === 'voice') {
+    const d = m.voiceDuration || 0;
+    const durTxt = Math.floor(d/60) + ':' + String(d%60).padStart(2,'0');
+    bodyHTML = `<div class="voice-msg">
+        <button onclick="playVoice(this, '${m.voiceUrl}')">▶</button>
+        <div class="vm-bar"><div class="vm-prog"></div></div>
+        <span class="vm-time">${durTxt}</span>
+    </div>`;
+}
+```
+
+## ۵. importهای لازم Firebase Storage
+
+بالای فایل کنار بقیه importها مطمئن شو این‌ها هستن:
+
+```js
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+const storage = getStorage(app);
+```
+
+---
+
+دو تا چیز رو تأیید کن تا بقیه دقیق بشه:
+
+1. **Firebase Storage داری؟** اگه نه، بگو تا نسخه base64 ویس بدم (محدودیت حجم داره ولی بدون Storage کار می‌کنه).
+2. توی `renderMessage`، شاخه‌بندی نوع پیام دقیقاً با چه متغیری ساخته میشه (`bodyHTML`? `html`?) — اسمشو بگو یا بذار همون بلوک `renderMessage` رو دربیارم تا شاخه ویس رو دقیق جا بدم.
+
+بعدش میریم سراغ **وضعیت آنلاین زنده** و بعد **استوری‌ها (حذف/بازدیدکننده/ری‌اکشن)**.
+
+می‌رم سراغ **وضعیت آنلاین زنده**. اول باید ببینم هدر چت کجا و چطور رندر می‌شه و `lastOnline` کجا نمایش داده می‌شه تا کد دقیقاً سرجاش بشینه.
+ساختار رو دارم. مشکل فعلی واضحه: `renderChatHeader()` فقط **یک‌بار** موقع `openChat` اجرا می‌شه، پس وضعیت آنلاین طرف مقابل **زنده نیست** — تا چت رو نبندی و باز نکنی، آپدیت نمی‌شه. همینطور خود تو فقط هر ۶۰ ثانیه `lastOnline` رو می‌نویسی.
+
+راه‌حل: یک `onSnapshot` روی داکیومنت کاربر طرف مقابل می‌ذارم تا هر تغییر `lastOnline` بلافاصله توی `#hSub` و نقطه آنلاین منعکس بشه.
+
+## ۱. JS — اشتراک زنده وضعیت طرف مقابل
+
+این بلوک رو کنار بقیه توابع چت اضافه کن:
+
+```js
+// ===== Live presence of chat partner =====
+let partnerStatusUnsub = null;
+let partnerTickInt = null;
+
+function subscribePartnerStatus() {
+    // پاک‌سازی اشتراک قبلی
+    if (partnerStatusUnsub) { partnerStatusUnsub(); partnerStatusUnsub = null; }
+    if (partnerTickInt) { clearInterval(partnerTickInt); partnerTickInt = null; }
+
+    if (!activeChat || activeChat.type !== 'private') return;
+    const other = activeChat.members.find(m => m !== ME.uid);
+    if (!other) return;
+
+    partnerStatusUnsub = onSnapshot(doc(db, 'users', other), snap => {
+        if (!snap.exists()) return;
+        applyPartnerStatus(snap.data().lastOnline);
+    });
+
+    // رفرش متن «X دقیقه پیش» هر ۳۰ ثانیه بدون خواندن مجدد از سرور
+    partnerTickInt = setInterval(() => {
+        if (partnerLastOnline) applyPartnerStatus(partnerLastOnline);
+    }, 30000);
+}
+
+let partnerLastOnline = null;
+function applyPartnerStatus(lastOnline) {
+    partnerLastOnline = lastOnline;
+    const txt = getLastSeenText(lastOnline);
+    $('hSub').textContent = txt;
+    $('hSub').style.color = txt === 'آنلاین' ? 'var(--green)' : 'var(--gold)';
+}
+```
+
+## ۲. وصل کردن به `openChat`
+
+داخل `openChat` (خط ۲۷۲۷)، بعد از `subscribeTyping(chatId);` این رو اضافه کن:
+
+```js
+subscribePartnerStatus();
+```
+
+و وقتی چت بسته می‌شه یا چت دیگه‌ای باز می‌شه، اشتراک قبلی باید پاک بشه. چون `subscribePartnerStatus()` خودش اول `partnerStatusUnsub()` رو صدا می‌زنه، با هر بار `openChat` تمیز می‌شه. ولی برای بستن کامل چت، اگه تابع بستن داری (مثل `closeChat`)، این رو هم توش بذار:
+
+```js
+if (partnerStatusUnsub) { partnerStatusUnsub(); partnerStatusUnsub = null; }
+if (partnerTickInt) { clearInterval(partnerTickInt); partnerTickInt = null; }
+```
+
+## ۳. آنلاین‌تر کردن خودت (مهم)
+
+الان `updatePresence` هر ۶۰ ثانیه اجرا می‌شه، یعنی طرف مقابل ممکنه تا یک دقیقه بعد از خروجت همچنان «آنلاین» ببینتت. دو بهبود:
+
+**الف) رفرش سریع‌تر** — توی `enterApp` بازه رو از `60000` به `30000` کم کن:
+
+```js
+presenceInterval = setInterval(updatePresence, 30000);
+```
+
+**ب) آپدیت روی فعالیت و خروج** — این‌ها رو یک‌بار توی `enterApp` اضافه کن:
+
+```js
+// آپدیت presence هنگام برگشتن به تب
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) updatePresence();
+});
+```
+
+`getLastSeenText` چون آستانه‌ی «آنلاین» داره (احتمالاً زیر ۱-۲ دقیقه)، با رفرش ۳۰ ثانیه‌ای طرف مقابل، انتقال از آنلاین به آفلاین نرم و دقیق می‌شه.
+
+---
+
+یک نکته که باید چک کنم تا کامل بشه: آستانه‌ی «آنلاین» توی `getLastSeenText` چنده؟ یعنی چند ثانیه/دقیقه `lastOnline` رو آنلاین حساب می‌کنه؟ این تعیین می‌کنه بازه رفرش ۳۰ ثانیه کافیه یا نه. می‌خوای بدنه‌ی `getLastSeenText` رو دربیارم تا آستانه رو ببینم و هماهنگش کنم؟
+
+بعدش می‌ریم سراغ **استوری‌ها (حذف دستی، لیست بازدیدکننده، ری‌اکشن/ریپلای)**.
+
+
+بریم سراغ بعدی. طبق روند، نوبت قابلیت‌های پیشرفته‌ی استوری بود: حذف دستی، لیست بازدیدکننده‌ها، و ری‌اکشن/ریپلای روی استوری. اول بذار وضعیت دقیق فعلی فایل رو از نظر استوری و viewerش چک کنم تا روی همون ساختار سوار کنم.
+تأیید شد: کد استوری با این نام‌ها توی فایل نیست، پس استوری از صفر ساخته می‌شه (همون طراحی که آماده کردیم). و `getLastSeenText` هست ولی آستانه‌ی دقیقش هنوز معلوم نیست. بذار همون چند خط رو دربیارم تا آستانه‌ی «آنلاین» رو ببینم — هم برای هماهنگی بازه‌ی ۳۰ ثانیه، هم چون استوری به همین منطق ربطی نداره ولی presence مهمه.
+آستانه‌ی «آنلاین» مشخص شد: **زیر ۱۲۰۰۰۰ms یعنی ۲ دقیقه**. پس تنظیم presence ما درسته — با رفرش ۳۰ ثانیه‌ای، طرف مقابل حداکثر تا ۲ دقیقه بعد از خروج آفلاین می‌شه و انتقالش نرم و دقیقه. هیچ تغییری توی `getLastSeenText` لازم نیست.
+
+حالا بریم سراغ قابلیت‌های پیشرفته‌ی استوری. این‌ها روی همون ساختار استوری که از صفر طراحی کردیم سوار می‌شن (`stories` collection با فیلدهای `viewers`, `ownerId`, `mediaUrl` و ...).
+
+## ۱. حذف دستی استوری (فقط صاحبش)
+
+داخل `showStoryItem()` وقتی استوری خودته، دکمه حذف نشون بده. این تابع رو اضافه کن:
+
+```js
+async function deleteStory(storyId) {
+    if (!confirm('این استوری حذف بشه؟')) return;
+    try {
+        await deleteDoc(doc(db, 'stories', storyId));
+        // اگه در حال نمایش بود، بریم آیتم بعدی یا بسته بشه
+        nextStory();
+    } catch (e) {
+        showMockModal('خطا در حذف استوری');
+    }
+}
+```
+
+و در `showStoryItem()` بعد از ساختن آیتم جاری، این تکه رو برای دکمه حذف بذار:
+
+```js
+const item = svItems[svItemIndex];
+const isMine = item.ownerId === ME.uid;
+$('svDelete').style.display = isMine ? 'flex' : 'none';
+$('svDelete').onclick = () => deleteStory(item.id);
+```
+
+## ۲. لیست بازدیدکننده‌ها (فقط برای صاحب استوری)
+
+چون `viewers` آرایه‌ی uidهاست، برای صاحب استوری تعداد و لیست رو نشون می‌دیم:
+
+```js
+async function openStoryViewers(item) {
+    if (item.ownerId !== ME.uid) return;
+    const viewers = item.viewers || [];
+    if (viewers.length === 0) {
+        showMockModal('هنوز کسی این استوری رو ندیده');
+        return;
+    }
+    // واکشی اطلاعات بازدیدکننده‌ها
+    const list = await Promise.all(viewers.map(uid => getUser(uid)));
+    const html = list.filter(Boolean).map(u => `
+        <div class="viewer-row">
+            <img class="viewer-ava" src="${u.photoURL || DEFAULT_AVATAR}" alt="">
+            <span class="viewer-name">${escapeHtml(u.displayName || 'کاربر')}</span>
+        </div>
+    `).join('');
+    $('viewerList').innerHTML = html;
+    $('viewerCount').textContent = viewers.length + ' بازدید';
+    $('viewerSheet').classList.add('open');
+}
+
+function closeViewerSheet() {
+    $('viewerSheet').classList.remove('open');
+}
+```
+
+و در `showStoryItem()` برای استوری خودت، نوار «👁 N» رو پایین viewer نشون بده:
+
+```js
+if (isMine) {
+    $('svViewersBtn').style.display = 'flex';
+    $('svViewersBtn').querySelector('.svv-count').textContent = (item.viewers || []).length;
+    $('svViewersBtn').onclick = () => { pauseStory(); openStoryViewers(item); };
+} else {
+    $('svViewersBtn').style.display = 'none';
+}
+```
+
+## ۳. ری‌اکشن و ریپلای روی استوری
+
+استوری دیگران یک ورودی ته صفحه داره: تایپ جواب + دکمه‌های ری‌اکشن سریع. جواب به‌صورت پیام خصوصی به صاحب استوری می‌ره.
+
+```js
+// ری‌اکشن سریع روی استوری → به‌عنوان پیام به صاحب استوری
+async function reactToStory(emoji) {
+    const item = svItems[svItemIndex];
+    if (!item || item.ownerId === ME.uid) return;
+    await sendStoryReply(emoji, item);
+    // فیدبک کوچک
+    floatEmoji(emoji);
+}
+
+async function sendStoryReply(text, item) {
+    item = item || svItems[svItemIndex];
+    if (!item || !text.trim() || item.ownerId === ME.uid) return;
+
+    // پیدا/ساخت چت خصوصی با صاحب استوری
+    const chatId = await getOrCreatePrivateChat(item.ownerId);
+
+    await pushMessage(chatId, {
+        text: text.trim(),
+        storyReplyTo: {
+            storyId: item.id,
+            mediaUrl: item.mediaUrl,
+            ownerName: item.ownerName
+        }
+    });
+
+    $('svReplyInput').value = '';
+    showMockModal('جواب فرستاده شد');
+}
+```
+
+تابع کمکی برای انیمیشن ری‌اکشن:
+
+```js
+function floatEmoji(emoji) {
+    const el = document.createElement('div');
+    el.className = 'story-float-emoji';
+    el.textContent = emoji;
+    $('storyViewer').appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+}
+```
+
+---
+
+دو تا نکته‌ی وابستگی که باید چک کنم تا این بخش کامل و بدون باگ بشه:
+
+1. **`getOrCreatePrivateChat`** — توی فایل هست یا با اسم دیگه‌ای پیاده شده؟ چون `sendStoryReply` بهش وابسته‌ست.
+2. **امضای دقیق `pushMessage`** — آیا `pushMessage(chatId, obj)` می‌گیره یا فقط `pushMessage(obj)` و خودش `activeChatId` رو می‌خونه؟ این روی نحوه‌ی صدا زدنش اثر داره.
+
+می‌خوای این دو تا رو از فایل دربیارم تا امضاها رو دقیق هماهنگ کنم؟ بعدش CSS مربوط به دکمه حذف، شیت بازدیدکننده‌ها و ری‌اکشن استوری رو هم می‌دم تا کل بخش استوری بسته بشه.
+
+می‌بررسم امضای دقیق توابع رو تا کد بدون باگ بسته بشه.
+امضاها رو دقیق درآوردم. دو تا نکته مهم که کد رو شکل می‌ده:
+
+- `pushMessage(data)` فقط یک آرگومان می‌گیره و خودش `activeChatId` رو می‌خونه. پس برای جواب استوری نمی‌تونم چت مقصد رو پاس بدم؛ باید مستقیم با `addDoc` بفرستم تا چتِ بازِ فعلی به‌هم نخوره.
+- `getOrCreatePrivateChat` و `DEFAULT_AVATAR` و `floatEmoji`/`pauseStory` توی فایل **نیستن** — همه رو خودم می‌سازم.
+
+این هم بسته‌ی نهایی استوری. سه بخش: JS، HTML، CSS.
+
+## ۱) JavaScript — این‌ها رو کنار بقیه‌ی توابع استوری بذار
+
+```js
+// ---------- کمک‌ها ----------
+const STORY_DEFAULT_AVA = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="40" fill="#2a2a3a"/><text x="50%" y="55%" font-size="34" text-anchor="middle" fill="#888">👤</text></svg>'
+);
+
+// مکث/ادامه‌ی استوری (برای وقتی شیت بازدید یا ورودی جواب باز می‌شه)
+function pauseStory() {
+    clearTimeout(svTimer);
+    const fill = document.querySelector('#storyBars .sb-fill.active');
+    if (fill) fill.style.animationPlayState = 'paused';
+}
+function resumeStory() {
+    const fill = document.querySelector('#storyBars .sb-fill.active');
+    if (fill) {
+        fill.style.animationPlayState = 'running';
+        // زمان باقی‌مانده رو از روی عرض فعلی نوار حساب می‌کنیم
+        const w = fill.getBoundingClientRect().width;
+        const full = fill.parentElement.getBoundingClientRect().width || 1;
+        const remain = Math.max(0, STORY_DURATION * (1 - w / full));
+        clearTimeout(svTimer);
+        svTimer = setTimeout(nextStory, remain);
+    } else {
+        clearTimeout(svTimer);
+        svTimer = setTimeout(nextStory, STORY_DURATION);
+    }
+}
+
+// انیمیشن شناور ری‌اکشن
+function floatEmoji(emoji) {
+    const host = $('storyViewer');
+    if (!host) return;
+    const el = document.createElement('div');
+    el.className = 'story-float-emoji';
+    el.textContent = emoji;
+    el.style.left = (30 + Math.random() * 40) + '%';
+    host.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+}
+
+// ---------- حذف استوری ----------
+async function deleteStory(storyId) {
+    if (!confirm('این استوری حذف بشه؟')) return;
+    try {
+        await deleteDoc(doc(db, 'stories', storyId));
+        showMockModal('استوری حذف شد');
+        // onSnapshot لیست رو آپدیت می‌کنه؛ فعلاً viewer رو ببند یا برو بعدی
+        closeStoryViewer();
+    } catch (e) {
+        showMockModal('خطا در حذف استوری');
+    }
+}
+
+// ---------- لیست بازدیدکننده‌ها ----------
+async function openStoryViewers(item) {
+    if (!item || item.ownerId !== ME.uid) return;
+    pauseStory();
+    const viewers = (item.viewers || []).filter(uid => uid !== ME.uid);
+    $('viewerCount').textContent = viewers.length + ' بازدید';
+    if (viewers.length === 0) {
+        $('viewerList').innerHTML = '<div class="viewer-empty">هنوز کسی این استوری رو ندیده</div>';
+    } else {
+        const list = await Promise.all(viewers.map(uid => getUser(uid)));
+        $('viewerList').innerHTML = list.map(u => `
+            <div class="viewer-row">
+                <img class="viewer-ava" src="${u.photoURL || STORY_DEFAULT_AVA}" alt="">
+                <span class="viewer-name">${escapeHtml(u.isPremium ? '💠 ' + u.displayName : u.displayName)}</span>
+            </div>
+        `).join('');
+    }
+    $('viewerSheet').classList.add('open');
+}
+function closeViewerSheet() {
+    $('viewerSheet').classList.remove('open');
+    resumeStory();
+}
+
+// ---------- جواب و ری‌اکشن استوری ----------
+// چت خصوصی با یک کاربر رو پیدا یا می‌سازه و idش رو برمی‌گردونه
+async function getOrCreatePrivateChat(otherUid) {
+    // جست‌وجو بین چت‌هایی که من عضوشونم
+    const q = query(collection(db, 'chats'), where('members', 'array-contains', ME.uid));
+    const snap = await getDocs(q);
+    let found = null;
+    snap.forEach(d => {
+        const c = d.data();
+        if (c.type === 'private' && Array.isArray(c.members)
+            && c.members.length === 2 && c.members.includes(otherUid)) {
+            found = d.id;
+        }
+    });
+    if (found) return found;
+    // ساخت چت جدید
+    const ref = await addDoc(collection(db, 'chats'), {
+        type: 'private',
+        members: [ME.uid, otherUid],
+        photoURL: '',
+        lastMessage: '',
+        lastTime: serverTimestamp(),
+        background: ''
+    });
+    return ref.id;
+}
+
+// فرستادن پیام مستقیم به یک چت بدون باز کردنش (تا استوری بسته نشه)
+async function sendDirectMessage(chatId, data) {
+    const msg = {
+        senderId: ME.uid,
+        senderName: ME.displayName,
+        senderIsPremium: ME.isPremium || false,
+        createdAt: serverTimestamp(),
+        edited: false, deleted: false,
+        reactions: {}, readBy: [],
+        ...data
+    };
+    await addDoc(collection(db, 'chats', chatId, 'messages'), msg);
+    const preview = data.text || 'پاسخ استوری';
+    await updateDoc(doc(db, 'chats', chatId), {
+        lastMessage: preview.slice(0, 45),
+        lastTime: serverTimestamp()
+    });
+}
+
+async function sendStoryReply(text) {
+    const item = svItems[svItemIndex];
+    text = (text || $('svReplyInput').value || '').trim();
+    if (!item || !text || item.ownerId === ME.uid) return;
+    try {
+        const chatId = await getOrCreatePrivateChat(item.ownerId);
+        await sendDirectMessage(chatId, {
+            text,
+            storyReplyTo: {
+                storyId: item.id,
+                mediaUrl: item.mediaUrl,
+                ownerName: item.ownerName || ''
+            }
+        });
+        $('svReplyInput').value = '';
+        showMockModal('جواب فرستاده شد');
+    } catch (e) {
+        showMockModal('خطا در ارسال جواب');
+    }
+}
+
+async function reactToStory(emoji) {
+    const item = svItems[svItemIndex];
+    if (!item || item.ownerId === ME.uid) return;
+    floatEmoji(emoji);
+    try {
+        const chatId = await getOrCreatePrivateChat(item.ownerId);
+        await sendDirectMessage(chatId, {
+            text: emoji,
+            storyReplyTo: {
+                storyId: item.id,
+                mediaUrl: item.mediaUrl,
+                ownerName: item.ownerName || ''
+            }
+        });
+    } catch (e) {}
+}
+```
+
+حالا توی `showStoryItem()` این بلوک رو اضافه کن (بعد از اینکه `item` و `isMine` مشخص شد). اگه `isMine` رو نداری، با همین خط بساز:
+
+```js
+const item = svItems[svItemIndex];
+const isMine = item.ownerId === ME.uid;
+
+// دکمه حذف فقط برای صاحب
+$('svDelete').style.display = isMine ? 'flex' : 'none';
+$('svDelete').onclick = () => deleteStory(item.id);
+
+// نوار بازدیدکننده‌ها فقط برای صاحب، ورودی جواب فقط برای بقیه
+if (isMine) {
+    $('svViewersBtn').style.display = 'flex';
+    $('svViewersBtn').querySelector('.svv-count').textContent = (item.viewers || []).filter(u => u !== ME.uid).length;
+    $('svViewersBtn').onclick = () => openStoryViewers(item);
+    $('svReplyBar').style.display = 'none';
+} else {
+    $('svViewersBtn').style.display = 'none';
+    $('svReplyBar').style.display = 'flex';
+}
+```
+
+## ۲) HTML — داخل `#storyViewer` اضافه کن
+
+دکمه حذف رو کنار `sv-close` بذار، و این دو بلوک رو ته `#storyViewer` (قبل از بسته‌شدن div) اضافه کن:
+
+```html
+<!-- دکمه حذف (صاحب استوری) -->
+<button class="sv-delete" id="svDelete" onclick="event.stopPropagation()" style="display:none">🗑</button>
+
+<!-- نوار بازدیدکننده‌ها (صاحب استوری) -->
+<button class="sv-viewers-btn" id="svViewersBtn" onclick="event.stopPropagation()" style="display:none">
+    👁 <span class="svv-count">0</span>
+</button>
+
+<!-- نوار جواب و ری‌اکشن (بیننده) -->
+<div class="sv-reply-bar" id="svReplyBar" onclick="event.stopPropagation()" style="display:none">
+    <div class="sv-reactions">
+        <span onclick="reactToStory('❤️')">❤️</span>
+        <span onclick="reactToStory('😂')">😂</span>
+        <span onclick="reactToStory('😮')">😮</span>
+        <span onclick="reactToStory('😢')">😢</span>
+        <span onclick="reactToStory('🔥')">🔥</span>
+        <span onclick="reactToStory('👏')">👏</span>
+    </div>
+    <div class="sv-reply-input-wrap">
+        <input id="svReplyInput" placeholder="جواب بده..."
+               onfocus="pauseStory()" onblur="resumeStory()"
+               onkeydown="if(event.key==='Enter'){sendStoryReply()}">
+        <button onclick="sendStoryReply()">➤</button>
+    </div>
+</div>
+```
+
+و این شیت بازدیدکننده‌ها رو بیرونِ `#storyViewer` ولی ته همون بخش استوری بذار:
+
+```html
+<!-- شیت لیست بازدیدکننده‌ها -->
+<div class="viewer-sheet" id="viewerSheet">
+    <div class="viewer-backdrop" onclick="closeViewerSheet()"></div>
+    <div class="viewer-panel">
+        <div class="viewer-head">
+            <span id="viewerCount">0 بازدید</span>
+            <button onclick="closeViewerSheet()">✕</button>
+        </div>
+        <div class="viewer-list" id="viewerList"></div>
+    </div>
+</div>
+```
+
+## ۳) CSS
+
+```css
+/* دکمه حذف */
+.sv-delete {
+    position: absolute; top: 18px; left: 16px; z-index: 30;
+    background: rgba(0,0,0,.45); border: none; color: #fff;
+    width: 40px; height: 40px; border-radius: 50%; font-size: 18px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+
+/* نوار بازدیدکننده‌ها */
+.sv-viewers-btn {
+    position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+    z-index: 30; background: rgba(0,0,0,.5); border: none; color: #fff;
+    padding: 8px 18px; border-radius: 20px; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+}
+.svv-count { font-weight: 700; }
+
+/* نوار جواب */
+.sv-reply-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 30;
+    padding: 14px 16px 22px; display: flex; flex-direction: column; gap: 12px;
+    background: linear-gradient(transparent, rgba(0,0,0,.55));
+}
+.sv-reactions { display: flex; justify-content: space-around; }
+.sv-reactions span {
+    font-size: 28px; cursor: pointer; transition: transform .15s;
+}
+.sv-reactions span:active { transform: scale(1.4); }
+.sv-reply-input-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+    border-radius: 24px; padding: 4px 6px 4px 16px;
+}
+.sv-reply-input-wrap input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #fff; font-size: 15px; font-family: inherit;
+}
+.sv-reply-input-wrap input::placeholder { color: rgba(255,255,255,.6); }
+.sv-reply-input-wrap button {
+    background: var(--gold, #d4af37); border: none; color: #000;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 16px;
+}
+
+/* انیمیشن شناور ری‌اکشن */
+.story-float-emoji {
+    position: absolute; bottom: 90px; z-index: 40; font-size: 40px;
+    pointer-events: none; animation: floatUp 1.3s ease-out forwards;
+}
+@keyframes floatUp {
+    0%   { transform: translateY(0) scale(.6); opacity: 0; }
+    20%  { opacity: 1; transform: translateY(-20px) scale(1.2); }
+    100% { transform: translateY(-220px) scale(1); opacity: 0; }
+}
+
+/* شیت بازدیدکننده‌ها */
+.viewer-sheet {
+    position: fixed; inset: 0; z-index: 1200;
+    display: none;
+}
+.viewer-sheet.open { display: block; }
+.viewer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+.viewer-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    max-height: 70vh; background: #1a1a26;
+    border-radius: 20px 20px 0 0; padding: 16px;
+    animation: sheetUp .25s ease; overflow-y: auto;
+}
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.viewer-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; color: #fff; font-weight: 700;
+}
+.viewer-head button {
+    background: none; border: none; color: #aaa; font-size: 18px; cursor: pointer;
+}
+.viewer-row {
+    display: flex; align-items: center; gap: 12px; padding: 8px 4px;
+}
+.viewer-ava { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.viewer-name { color: #eee; font-size: 15px; }
+.viewer-empty { color: #888; text-align: center; padding: 30px 0; }
+```
+
+این کل بخش استوری رو می‌بنده. جمع‌بندیِ وابستگی‌ها که همه چک شدن و درستن:
+
+- `pushMessage` دست‌نخورده موند؛ جواب استوری از `sendDirectMessage` جدا استفاده می‌کنه تا چتِ بازِ فعلی خراب نشه.
+- `getOrCreatePrivateChat` با `query` + `getDocs` روی `members array-contains` پیاده شد (همه‌ی importهاش از قبل توی فایل بودن).
+- `escapeHtml` رو قبلاً دادم — اگه هنوز اضافه نکردی، حتماً بذارش وگرنه `openStoryViewers` ارور می‌ده.
+- جای `DEFAULT_AVATAR` از `STORY_DEFAULT_AVA` استفاده شد چون توی فایل چنین ثابتی نبود.
+
+تنها چیزی که از سمت تو می‌مونه: قرار دادن این تکه‌ها سر جاشون و افزودن بلوک داخل `showStoryItem()`. می‌خوای `showStoryItem` کامل و یک‌پارچه (با این تکه‌ها داخلش) رو هم برات بنویسم که فقط کپی کنی؟
+
+
+
+
+
+
+
+
+

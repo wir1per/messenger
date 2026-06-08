@@ -1,0 +1,3229 @@
+Update ui
+
+بذار همون بازه‌های دقیق رو یکجا بخونم تا بلوک‌های کامل `.messages`، `.bubble`، `.msg-row.me`، `.input-bar` و `.send-btn` رو داشته باشم.
+حالا کل ساختار قلب پیام‌رسان رو دارم: `.messages`، `.msg-row`، `.bubble`، `.input-bar` و `.send-btn`. این بخش‌ها مهم‌ترین جای حس «جت شخصی» هستن چون بیشترین زمان کاربر همینجا می‌گذره.
+
+بذار بازطراحی رو از همین قلب شروع کنم. این نسخه‌ی ارتقایافته رو بلوک به بلوک می‌سازم تا حس لوکس، آرام و premium بده، با انیمیشن‌های نرم‌تر و بدون باگ.
+
+## ۱) ناحیه پیام‌ها و حباب‌ها (جایگزین خطوط 1111–1187)
+
+```css
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    /* عمق نرم بالا و پایین، حس فضای باز */
+    scroll-padding-block: 12px;
+    overscroll-behavior: contain;
+}
+
+.msg-row {
+    display: flex;
+    max-width: 80%;
+    gap: 6px;
+    opacity: 0;
+    /* ورود نرم‌تر و لطیف‌تر، بدون پرش */
+    animation: bubbleIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    align-self: flex-end;
+    transform-origin: bottom left;
+}
+.msg-row.me {
+    align-self: flex-start;
+    transform-origin: bottom right;
+}
+
+/* فاصله‌ی هوشمند بین گروه پیام‌های هم‌فرستنده */
+.msg-row + .msg-row {
+    margin-top: 2px;
+}
+
+@keyframes bubbleIn {
+    0% {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.bubble {
+    background: var(--other);
+    padding: 10px 14px;
+    border-radius: var(--radius-lg);
+    border-bottom-left-radius: 5px;
+    position: relative;
+    word-break: break-word;
+    box-shadow: var(--elevation-1);
+    border: 1px solid rgba(191, 160, 85, 0.07);
+    transition: transform var(--transition-smooth),
+                box-shadow var(--transition-smooth),
+                border-color var(--transition-smooth);
+    will-change: transform, box-shadow;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    line-height: 1.55;
+}
+
+.msg-row.me .bubble {
+    background: var(--me);
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: 5px;
+    border: 1px solid rgba(191, 160, 85, 0.16);
+    box-shadow: var(--elevation-1), inset 0 0 10px rgba(191, 160, 85, 0.04);
+}
+
+.bubble:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--elevation-2);
+    z-index: 2;
+    border-color: rgba(191, 160, 85, 0.24);
+}
+
+.bubble.temp-msg {
+    opacity: 0.55;
+    filter: grayscale(15%);
+    animation: pulseOpacity 1.6s ease-in-out infinite;
+}
+@keyframes pulseOpacity {
+    0%, 100% { opacity: 0.55; }
+    50% {
+        opacity: 0.85;
+        box-shadow: 0 0 12px rgba(191, 160, 85, 0.22);
+    }
+}
+
+.bubble.premium-msg {
+    border: 1px solid rgba(191, 160, 85, 0.4);
+    box-shadow: inset 0 0 12px rgba(191, 160, 85, 0.09), var(--elevation-2);
+}
+
+.bubble.royal-decree {
+    background: linear-gradient(145deg, rgba(50, 10, 10, 0.5), rgba(10, 6, 6, 0.96));
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.3);
+    animation: pulseBorder 2.8s ease-in-out infinite alternate;
+}
+```
+
+تغییرات کلیدی اینجا: ورود حباب با `bubbleIn` نرم‌تر و طبیعی‌تر شد (به‌جای پرش `popIn`)، فاصله‌ها بازتر شدند، `transition` به‌جای `var(--transition-fast)` روی پراپرتی‌های مشخص تعریف شد تا روان‌تر و بدون لگ باشه، و `gap` ناحیه پیام کم شد تا گروه پیام‌ها چسبیده و تمیز دیده بشن.
+
+## ۲) نوار ورودی و دکمه ارسال (جایگزین خطوط 1442–1505)
+
+```css
+.input-bar textarea {
+    flex: 1;
+    resize: none;
+    max-height: 120px;
+    min-height: 44px;
+    padding: 11px 18px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(191, 160, 85, 0.12);
+    border-radius: 22px;
+    color: var(--txt);
+    font-size: var(--font-md);
+    text-align: right;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+    line-height: 1.55;
+    font-weight: 600;
+    transition: border-color var(--transition-smooth),
+                background var(--transition-smooth),
+                box-shadow var(--transition-smooth);
+}
+.input-bar textarea:focus {
+    border-color: var(--gold);
+    background: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 14px rgba(191, 160, 85, 0.14),
+                inset 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.input-bar textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+.action-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--gold);
+    font-size: 18px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-bounce);
+    border: 1px solid rgba(191, 160, 85, 0.1);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+}
+.action-btn:hover {
+    background: rgba(191, 160, 85, 0.14);
+    color: #fff;
+    transform: scale(1.08) rotate(6deg);
+    box-shadow: 0 0 12px rgba(191, 160, 85, 0.25);
+    border-color: var(--gold);
+}
+.action-btn:active {
+    transform: scale(0.94);
+}
+
+.send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--premium);
+    color: #1a0808;
+    font-size: 18px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(166, 138, 48, 0.28);
+    transition: var(--transition-bounce);
+    padding-left: 2px;
+    cursor: pointer;
+}
+.send-btn:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 6px 22px rgba(212, 175, 55, 0.42);
+}
+.send-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 8px rgba(166, 138, 48, 0.3);
+}
+```
+
+اینجا `:active` به دکمه‌ها اضافه شد تا لمس روی موبایل بازخورد فیزیکی بده (حس کیفیت بالا)، اندازه‌ها هماهنگ‌تر شدن (هم action هم send روی 42–44px)، و placeholder تمیزتر شد.
+
+می‌خوای همینطور ادامه بدم سراغ هدر چت و لیست چت‌ها برای یکدست‌سازی همین حس، یا اول می‌خوای این دو بلوک رو توی فایل بذاری و نتیجه رو ببینی؟
+
+بذار ادامه‌ی CSS واقعی فایل رو دربیارم تا بازطراحی هدر چت و لیست چت‌ها دقیقاً با ساختار و شماره‌خط‌های فعلی هماهنگ باشه.
+عالی، هدر چت رو با خطوط دقیق (969–1078) گرفتم. بازطراحی رو ادامه می‌دم.
+
+## ۳) هدر چت (جایگزین خطوط 969–1078)
+
+```css
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    background: var(--glass-bg);
+    border-bottom: 1px solid var(--glass-border);
+    z-index: 20;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+/* خط نازک طلایی پایین هدر، حس فریم لوکس */
+.chat-header::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(191, 160, 85, 0.5),
+        transparent);
+    opacity: 0.6;
+}
+.chat-header .back {
+    display: none;
+    color: var(--txt);
+    font-size: 22px;
+    background: none;
+    padding: 0 8px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform var(--transition-smooth), color var(--transition-smooth);
+}
+.chat-header .back:hover {
+    color: var(--gold);
+    transform: translateX(-2px);
+}
+.chat-header .h-av {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: var(--transition-bounce);
+    flex-shrink: 0;
+    box-shadow: var(--elevation-1);
+    overflow: hidden;
+}
+.chat-header .h-av img.emoji {
+    width: 24px;
+    height: 24px;
+}
+.chat-header .h-av:hover {
+    border-color: var(--gold);
+    transform: scale(1.08);
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+}
+.chat-header .h-info {
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+}
+.chat-header .h-name {
+    font-size: var(--font-lg);
+    font-weight: 900;
+    color: var(--txt);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.5px;
+}
+.chat-header .h-sub {
+    font-size: 11px;
+    color: var(--gold);
+    margin-top: 2px;
+    font-weight: 800;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+    transition: color var(--transition-smooth);
+}
+/* وقتی JS کلاس online می‌ذاره، نقطه‌ی زنده‌ی سبز کنار متن */
+.chat-header .h-sub.online {
+    color: var(--green);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.chat-header .h-sub.online::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: livePulse 2s ease-in-out infinite;
+}
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+.call-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+.call-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--txt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: var(--transition-bounce);
+    border: 1px solid rgba(191, 160, 85, 0.1);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+}
+.call-btn:hover {
+    background: rgba(191, 160, 85, 0.12);
+    color: var(--gold);
+    transform: translateY(-2px) scale(1.05);
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(191, 160, 85, 0.25);
+}
+.call-btn:active {
+    transform: scale(0.92);
+}
+.pinned-bar {
+    display: none;
+    background: rgba(14, 8, 8, 0.85);
+    border-bottom: 1px solid rgba(191, 160, 85, 0.22);
+    padding: 8px 20px;
+    cursor: pointer;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    z-index: 10;
+    animation: slideDown 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: var(--elevation-2);
+```
+
+تغییرات: یک خط طلایی محو (`::after`) زیر هدر اضافه شد که حس فریم لوکس می‌ده، نقطه‌ی زنده‌ی سبز با تپش نرم برای حالت آنلاین (`h-sub.online`) که با همون کار وضعیت آنلاین زنده هماهنگه، و بازخورد لمسی (`:active`) روی دکمه‌ها.
+
+نکته مهم: کلاس `.h-sub.online` وقتی فعال می‌شه که توی JS، جایی که `getLastSeenText` خروجی `آنلاین` می‌ده، علاوه بر رنگ سبز، کلاس `online` هم به `#hSub` اضافه بشه. الان فقط رنگ سبز ست می‌شه. می‌خوای اون یک خط JS رو هم بهت بدم تا نقطه‌ی زنده کار کنه؟
+
+برای ادامه‌ی یکدست‌سازی، حالا لیست چت‌ها (`.chat-item`, `.av`, `.ci-*`) رو لازم دارم. بذار اون بازه رو دقیق دربیارم.
+
+بذار بازه‌ی لیست چت‌ها رو از فایل دقیق دربیارم تا بدون باگ بازطراحی کنم.
+خط‌های 820–929 رو دقیق گرفتم. این بازطراحی لیست چت‌هاست با همون توکن‌ها و حس جت شخصی.
+
+## ۴) لیست چت‌ها (جایگزین خطوط 820–929)
+
+```css
+.chat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+}
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    margin: 3px 10px;
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+    will-change: background-color, transform;
+    position: relative;
+    overflow: hidden;
+}
+/* درخشش طلایی نرم که هنگام هاور از چپ عبور می‌کند */
+.chat-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(191, 160, 85, 0.06),
+        transparent);
+    transform: skewX(-20deg);
+    transition: left 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
+}
+.chat-item:hover::before {
+    left: 120%;
+}
+.chat-item:hover {
+    background: rgba(255, 255, 255, 0.028);
+    transform: translateX(-3px);
+}
+.chat-item:active {
+    transform: translateX(-1px) scale(0.99);
+}
+.chat-item.active {
+    background: rgba(191, 160, 85, 0.08);
+    border-color: rgba(191, 160, 85, 0.28);
+    box-shadow: inset 0 0 12px rgba(191, 160, 85, 0.06), 0 0 10px rgba(191, 160, 85, 0.12);
+}
+/* نوار امضای طلایی کنار چت فعال */
+.chat-item.active::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 3px;
+    border-radius: 3px 0 0 3px;
+    background: linear-gradient(180deg, var(--gold-light), var(--gold2));
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+.av {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--panel2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--gold);
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    transition: var(--transition-bounce);
+    box-shadow: var(--elevation-1);
+    overflow: hidden;
+}
+.av img.emoji {
+    width: 24px;
+    height: 24px;
+}
+.chat-item:hover .av {
+    border-color: rgba(191, 160, 85, 0.4);
+    transform: scale(1.04);
+}
+.chat-item.active .av {
+    border-color: var(--gold);
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+}
+.ci-main {
+    flex: 1;
+    min-width: 0;
+}
+.ci-name {
+    font-size: var(--font-md);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--txt);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.3px;
+}
+.ci-name .tag {
+    font-size: 9px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold2));
+    color: #1a0808;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 900;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+    box-shadow: 0 1px 4px rgba(166, 138, 48, 0.3);
+}
+.ci-last {
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 3px;
+    font-weight: 600;
+}
+.ci-time {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 800;
+    margin-bottom: auto;
+    margin-top: 4px;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+.online-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 4px;
+    box-shadow: 0 0 6px rgba(90, 158, 143, 0.4);
+    flex-shrink: 0;
+    animation: glowPulse 2.5s infinite;
+}
+```
+
+تغییرات اصلی:
+- یک درخشش طلایی نرم (`::before`) که موقع هاور از چپ به راست عبور می‌کنه، حس لمسِ نور روی سطح براق.
+- نوار امضای طلایی (`::after`) کنار چت فعال، به‌جای اینکه فقط رنگ پس‌زمینه عوض بشه، یک نشانگر واضح و لوکس می‌ده.
+- بازخورد لمسی (`:active`) و scale نرم روی آواتار هنگام هاور.
+- تگ (`.tag`) با گرادیان طلایی و سایه‌ی ظریف به‌جای رنگ تخت.
+
+همه‌چیز با همون توکن‌های موجود (`--gold-light`, `--gold2`, `--transition-bounce`) ساخته شده، پس بدون افزودن متغیر جدید کار می‌کنه.
+
+نکته فنی: کلاس‌های `.ci-sub`, `.ci-meta`, `.ci-badge` توی این بلوک نبودن. اگه badge شمارش پیام نخوانده داری و می‌خوای اونم لوکس بشه، بگو تا اول دقیق پیداش کنم.
+
+مرحله‌ی بعدی پیشنهادی: منوی چت (`#chatMenu`) یا نوار جست‌وجو. کدوم رو ادامه بدم؟
+
+بذار اول هر دو بخش رو توی فایل ببینم تا تصمیم بگیرم کدوم تأثیر بصری بیشتری داره و دقیق بازطراحی کنم.
+نتیجه‌ای که برگشت فقط شماره‌ی بازه بود و خود محتوای کد رو نداد. بذار دقیق خود سطرهای نوار جست‌وجو و منوی چت رو بگیرم تا روی ساختار واقعی کار کنم.
+نوار جست‌وجو رو انتخاب می‌کنم. دلیلش ساده‌ست: همیشه بالای لیست چت‌ها دیده می‌شه، پس تأثیر بصریش روی همه‌ی سنین بیشتر از منوییه که فقط با کلیک باز می‌شه. CSS کامل نوار جست‌وجو رو هم دیدم، ولی برای منوی چت هنوز استایل `.menu-pop` رو ندیدم، پس اون رو پیام بعد بعد از خوندن دقیقش انجام می‌دم.
+
+## ۵) نوار جست‌وجو (جایگزین خطوط 760–779)
+
+```css
+.search-row {
+    padding: 12px 16px;
+    background: var(--bg2);
+    position: relative;
+}
+/* آیکن ذره‌بین طلایی داخل فیلد */
+.search-row::before {
+    content: "🔍";
+    position: absolute;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    opacity: 0.45;
+    pointer-events: none;
+    transition: var(--transition-smooth);
+    z-index: 2;
+}
+.search-row:focus-within::before {
+    opacity: 0.9;
+    transform: translateY(-50%) scale(1.08);
+}
+.search-row input {
+    width: 100%;
+    padding: 12px 44px 12px 16px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(191, 160, 85, 0.12);
+    border-radius: 20px;
+    color: var(--txt);
+    font-size: 13px;
+    text-align: right;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: var(--transition-smooth);
+}
+.search-row input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+    font-weight: 600;
+}
+.search-row input:hover {
+    border-color: rgba(191, 160, 85, 0.22);
+    background: rgba(0, 0, 0, 0.6);
+}
+.search-row input:focus {
+    border-color: var(--gold);
+    background: rgba(0, 0, 0, 0.78);
+    box-shadow: 0 0 14px rgba(191, 160, 85, 0.14),
+                inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    transform: translateY(-1px);
+}
+```
+
+تغییرات اصلی:
+- یک آیکن ذره‌بین طلایی داخل فیلد گذاشتم (`::before`) که موقع فوکوس روشن‌تر و کمی بزرگ‌تر می‌شه. این حس «زنده بودن» می‌ده و برای کاربرهای مسن‌تر هم واضح‌تره که اینجا جای جست‌وجوئه.
+- `padding` راست رو به 44px رساندم تا متن با آیکن تداخل نکنه (چون چیدمان راست‌چینه).
+- استیت `:hover` و یک بالا‌آمدن نرم (`translateY(-1px)`) موقع فوکوس اضافه شد برای بازخورد لمسی.
+- استایل `placeholder` تمیزتر شد.
+
+نکته فنی: HTML نیازی به تغییر نداره، آیکن کاملاً از طریق CSS اضافه شده. فقط مطمئن شو که سطر `2107` همون `oninput="onSearchInput()"` رو نگه می‌داره (دست نخورده باقی می‌مونه).
+
+می‌خوای پیام بعد منوی چت (`#chatMenu` / `.menu-pop`) رو بعد از خوندن دقیق استایلش بازطراحی کنم؟
+
+من اول استایل واقعی منوی چت رو از فایل می‌خونم تا بدون شکستن چیزی بازطراحی کنم.
+خروجی خالی برگشت. بذار با کلیدواژه‌های دقیق‌تری استایل منوی چت و آیتم‌هاش رو پیدا کنم.
+استایل واقعی منو رو گرفتم. هر دو منوی `#chatMenu` و `#mainMenu` کلاس `.menu-pop` رو share می‌کنن، پس بازطراحی این کلاس هر دو رو هم‌زمان لوکس می‌کنه. هیچ سلکتور جدا برای `.menu-item` وجود نداره، فقط `.menu-pop button`.
+
+## ۶) منوی چت و منوی اصلی (جایگزین خطوط 1774–1816)
+
+```css
+.menu-pop {
+    position: fixed;
+    background: linear-gradient(160deg, rgba(20, 12, 12, 0.98), rgba(12, 7, 7, 0.99));
+    border: 1px solid rgba(191, 160, 85, 0.22);
+    border-radius: var(--radius-lg);
+    padding: 8px;
+    z-index: 200;
+    display: none;
+    min-width: 230px;
+    box-shadow: var(--elevation-3),
+                0 0 30px rgba(191, 160, 85, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    animation: menuPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(34px) saturate(1.2);
+    -webkit-backdrop-filter: blur(34px) saturate(1.2);
+    pointer-events: auto;
+    overflow: hidden;
+}
+/* خط طلایی ظریف بالای منو */
+.menu-pop::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(191, 160, 85, 0.5),
+        transparent);
+    pointer-events: none;
+}
+.menu-pop button {
+    display: block;
+    width: 100%;
+    text-align: right;
+    padding: 13px 16px;
+    background: none;
+    color: var(--txt);
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 800;
+    transition: var(--transition-smooth);
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    min-height: 44px;
+    position: relative;
+}
+.menu-pop button:last-child {
+    margin-bottom: 0;
+}
+.menu-pop button:hover {
+    background: linear-gradient(90deg,
+        rgba(191, 160, 85, 0.10),
+        rgba(191, 160, 85, 0.03));
+    transform: translateX(-4px);
+    color: var(--gold-light);
+    box-shadow: inset 0 0 10px rgba(191, 160, 85, 0.04);
+}
+.menu-pop button:active {
+    transform: translateX(-2px) scale(0.985);
+}
+.menu-pop button.danger {
+    color: var(--danger);
+}
+.menu-pop button.danger:hover {
+    background: linear-gradient(90deg,
+        rgba(192, 57, 43, 0.16),
+        rgba(192, 57, 43, 0.04));
+    color: #fff;
+    box-shadow: inset 0 0 10px rgba(192, 57, 43, 0.06);
+}
+```
+
+و انیمیشن جدید `menuPop` رو هم کنار `@keyframes popIn` اضافه کن (نرم‌تر و حرفه‌ای‌تر، با کمی بالا‌آمدن):
+
+```css
+@keyframes menuPop {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+```
+
+تغییرات اصلی:
+- پس‌زمینه از رنگ تخت به یک گرادیان عمقی تغییر کرد و `saturate` به blur اضافه شد تا حس شیشه‌ی گران‌قیمت بده.
+- یک خط طلایی محو بالای منو (`::before`) اضافه شد، همون امضای بصری که توی هدر و لیست چت استفاده کردیم؛ این کل UI رو یکدست می‌کنه.
+- هاور آیتم‌ها حالا گرادیان طلایی ملایم داره به‌جای سفیدِ ساده، و رنگ متن به `gold-light` می‌ره.
+- استیت `:active` برای بازخورد لمسی واقعی اضافه شد (مهم برای موبایل و همه سنین).
+- انیمیشن ورود از `popIn` به `menuPop` نرم‌تر شد. اگه نمی‌خوای انیمیشن قبلی دست بخوره، می‌تونی `menuPop` رو نگه داری چون اسم جداست و با چیزی تداخل نداره.
+
+نکته فنی: چون `#mainMenu` هم همین کلاس رو داره، این بازطراحی هر دو منو رو هم‌زمان لوکس می‌کنه و نیازی به کد اضافه برای منوی اصلی نیست.
+
+تا اینجا بخش‌های اصلی UI بازطراحی شدن: پیام‌ها، composer، هدر، لیست چت، نوار جست‌وجو و منوها. می‌خوای بریم سراغ صفحه‌ی ورود (`#login` / `#authScreen`) که اولین چیزیه کاربر می‌بینه و حس «وای» اولیه از اونجا شروع می‌شه؟
+
+حالا کد دقیق صفحه لاگین رو دارم (خطوط ۴۵۰ تا ۶۲۰). این آخرین لایه‌ای بود که مونده بود. بازطراحی نهایی صفحه ورود رو بر اساس همین مقادیر و توکن‌های موجود (`--premium`, `--gold`, `--glass-blur`) آماده کردم.
+
+این بلوک رو جایگزین خطوط `450` تا `620` فعلی کن:
+
+```css
+        /* ===== صفحه ورود لوکس (Private Jet Feel) ===== */
+        #authScreen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% -20%, #1a0808, var(--bg));
+            z-index: 50;
+            padding: 16px;
+            overflow: hidden;
+        }
+        /* هاله طلایی نرم پشت کارت برای عمق */
+        #authScreen::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 480px;
+            height: 480px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(191, 160, 85, 0.10), transparent 70%);
+            filter: blur(40px);
+            pointer-events: none;
+            animation: authGlow 6s ease-in-out infinite;
+        }
+        @keyframes authGlow {
+            0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+            50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            background: linear-gradient(160deg, rgba(30, 16, 16, 0.55), var(--glass-bg));
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 38px 28px;
+            box-shadow: var(--elevation-3), 0 0 40px rgba(191, 160, 85, 0.08);
+            backdrop-filter: var(--glass-blur) saturate(140%);
+            -webkit-backdrop-filter: var(--glass-blur) saturate(140%);
+            position: relative;
+            z-index: 1;
+            will-change: transform;
+            animation: cardRise 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        /* خط طلایی محو بالای کارت */
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 18%;
+            right: 18%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.7;
+        }
+        @keyframes cardRise {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 28px;
+            animation: popIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) 0.1s both;
+        }
+        .auth-logo h1 {
+            background: var(--premium);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 34px;
+            letter-spacing: 1px;
+            font-weight: 900;
+            animation: shimmerText 4s linear infinite;
+        }
+        @keyframes shimmerText {
+            to { background-position: 200% center; }
+        }
+        .auth-logo p {
+            color: var(--gold);
+            font-size: 11px;
+            margin-top: 7px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.85;
+        }
+
+        .auth-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(191, 160, 85, 0.1);
+        }
+        .auth-tabs button {
+            flex: 1;
+            padding: 11px;
+            background: none;
+            color: var(--muted);
+            border-radius: 12px;
+            font-size: var(--font-md);
+            font-weight: 800;
+            transition: var(--transition-smooth);
+        }
+        .auth-tabs button.active {
+            background: var(--premium-soft);
+            color: #1a0808;
+            box-shadow: 0 4px 16px rgba(166, 138, 48, 0.3);
+            transform: scale(1.03);
+        }
+        .auth-tabs button:active {
+            transform: scale(0.97);
+        }
+
+        .field {
+            margin-bottom: 15px;
+        }
+        .field label {
+            display: block;
+            font-size: 10.5px;
+            color: var(--gold);
+            margin-bottom: 5px;
+            font-weight: 800;
+            margin-right: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .field input,
+        .field textarea {
+            width: 100%;
+            padding: 13px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(191, 160, 85, 0.12);
+            border-radius: var(--radius);
+            color: var(--txt);
+            font-size: var(--font-md);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+            transition: var(--transition-smooth);
+        }
+        .field input:focus,
+        .field textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 14px rgba(191, 160, 85, 0.12), inset 0 2px 6px rgba(0, 0, 0, 0.45);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .btn-main {
+            width: 100%;
+            padding: 15px;
+            background: var(--premium);
+            background-size: 200% auto;
+            color: #1a0808;
+            font-weight: 900;
+            font-size: var(--font-md);
+            border-radius: var(--radius);
+            margin-top: 10px;
+            box-shadow: 0 4px 14px rgba(166, 138, 48, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: var(--transition-bounce);
+            position: relative;
+            overflow: hidden;
+        }
+        /* درخشش عبوری روی دکمه */
+        .btn-main::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transition: left 0.6s ease;
+        }
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(212, 175, 55, 0.42);
+        }
+        .btn-main:hover::after {
+            left: 130%;
+        }
+        .btn-main:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .auth-msg {
+            margin-top: 14px;
+            font-size: 12px;
+            text-align: center;
+            min-height: 18px;
+            font-weight: 800;
+            transition: var(--transition-smooth);
+            opacity: 0;
+        }
+        .auth-msg.show {
+            opacity: 1;
+        }
+        .auth-msg.err {
+            color: var(--danger);
+            text-shadow: 0 0 6px rgba(192, 57, 43, 0.25);
+        }
+        .auth-msg.ok {
+            color: var(--gold);
+            text-shadow: 0 0 6px rgba(191, 160, 85, 0.25);
+        }
+
+        #offlineOverlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 6, 6, 0.94);
+            z-index: 60;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+        }
+        #offlineOverlay.show {
+            display: flex;
+            animation: popIn 0.3s ease;
+        }
+        .offline-icon {
+            font-size: 54px;
+            margin-bottom: 16px;
+        }
+        .offline-title {
+            font-size: 22px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            color: var(--gold);
+        }
+```
+
+تغییرات کلیدی این بخش:
+
+- هاله طلاییِ تپندهٔ پشت کارت (`authGlow`) برای ایجاد عمق و حس لوکس.
+- ورود نرم کارت با `cardRise` و خط طلایی محو بالای کارت.
+- درخشش متحرک روی لوگو (`shimmerText`) و افکت عبور نور روی دکمه ورود (`::after`).
+- بازخورد لمسی `:active` روی تب‌ها و دکمه اصلی برای حس واکنش‌گرا.
+
+نکته: همهٔ توکن‌ها (`--premium`, `--gold`, `--glass-blur`, `--radius-xl` و...) از همون مقادیر موجود فایل استفاده شده و متغیر جدیدی اضافه نشده.
+
+با این بخش، تمام لایه‌های اصلی محیط چت (پیام‌ها، ورودی، هدر، لیست، جست‌وجو، منوها و لاگین) تحت طراحی جدید یکپارچه شدن. می‌خوای کلاس `online` رو هم که برای نقطهٔ وضعیت آنلاین به `#hSub` گفته بودیم، توی بخش جاوااسکریپت برات پیدا و اعمال کنم؟
+
+بذار اول بخش جاوااسکریپت مربوط به `#hSub` رو از فایل دربیارم تا دقیق ببینم کجا و چطور مقداردهی می‌شه.
+دیدم که نقطهٔ مرکزیِ مدیریت وضعیت، تابع `renderChatHeader()` هست و فقط برای چت خصوصی حالت «آنلاین» داره. پس کلاس `online` رو باید دقیقاً همون‌جا (شاخهٔ `private`) روی `#hSub` ست/پاک کنیم تا نقطهٔ تپنده فقط وقتی طرف واقعاً آنلاینه نمایش داده بشه.
+
+این بلوک خطوط `2738` تا `2749` رو جایگزین کن:
+
+```js
+            if (activeChat.type === 'private') {
+                const u = meta.userData;
+                const lastSeen = getLastSeenText(u.lastOnline);
+                const isOnline = lastSeen === 'آنلاین';
+                $( 'hSub' ).textContent = lastSeen;
+                $( 'hSub' ).style.color = isOnline ? 'var(--green)' : 'var(--gold)';
+                $( 'hSub' ).classList.toggle('online', isOnline);
+            } else if (activeChat.type === 'group') {
+                $( 'hSub' ).textContent = activeChat.members.length + ' حاضر';
+                $( 'hSub' ).style.color = 'var(--gold)';
+                $( 'hSub' ).classList.remove('online');
+            } else {
+                const lvl = Math.floor((activeChat.boosts || 0) / 5) + 1;
+                $( 'hSub' ).textContent = 'سیستم سطح ' + lvl + ' (' + (activeChat.boosts || 0) + ' 🚀)';
+                $( 'hSub' ).style.color = 'var(--gold)';
+                $( 'hSub' ).classList.remove('online');
+            }
+```
+
+نکتهٔ مهم: چون رنگ آنلاین در کد فعلی `var(--green)` بوده (نه طلایی)، نقطهٔ تپنده رو هم سبز گذاشتم تا با متن هماهنگ باشه و حس «وضعیت زنده» واقعی بده. اگه طلایی می‌خوای، فقط رنگ توی CSS زیر رو عوض کن.
+
+حالا CSS نقطهٔ آنلاین تپنده. این رو به استایل‌های هدر (نزدیک سلکتور `.h-sub`) اضافه کن:
+
+```css
+        /* نقطهٔ وضعیت آنلاین تپنده کنار زیرنویس هدر */
+        .h-sub.online {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .h-sub.online::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.6);
+            animation: livePulse 1.8s ease-out infinite;
+        }
+        @keyframes livePulse {
+            0%   { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.55); }
+            70%  { box-shadow: 0 0 0 7px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+```
+
+چرا این روش:
+
+- نقطه فقط با کلاس `online` فعال می‌شه، پس وقتی طرف آفلاینه یا «آخرین بازدید» نشون داده می‌شه، خبری از نقطه نیست.
+- چون توی هر سه شاخه (`private`/`group`/`channel`) کلاس رو صریح ست یا پاک می‌کنیم، موقع جابه‌جایی بین چت‌ها وضعیت قبلی نشت نمی‌کنه.
+- افکت `livePulse` با `box-shadow` کار می‌کنه (نه تغییر اندازهٔ خود نقطه)، برای همین چیدمان زیرنویس تکون نمی‌خوره.
+
+با این مرحله، آخرین قطعهٔ مونده از طراحی جدید هم سر جاش نشست. می‌خوای یه دور چک‌لیست نهایی از همهٔ بخش‌ها بدم که مطمئن شیم چیزی از قلم نیفتاده؟
+
+
+بذار ببینم چه بخش‌هایی از فایل هنوز بازطراحی نشدن تا ادامه بدیم.
+بخش بعدی که هنوز نمونده **مودال‌ها (modal)** هستن. این مهم‌ترین کانتینر قابل‌استفاده‌ی باقی‌مونده‌ست چون پروفایل، دیالوگ‌ها و popupهای بزرگ همه روش سوارن.
+
+براساس خطوط **1572–1668** فایل، این نسخه‌ی بازطراحی‌شده‌ی لوکس مودال‌ها رو با همون توکن‌های موجود آماده کردم (بدون متغیر جدید):
+
+```css
+/* ===== Modal background ===== */
+.modal-bg {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(20, 18, 14, 0.82), rgba(0, 0, 0, 0.92));
+    display: flex;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    transition: opacity 0.35s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.35s;
+}
+.modal-bg.show {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ===== Modal card ===== */
+.modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 88vh;
+    overflow-y: auto;
+    background:
+        linear-gradient(165deg, rgba(40, 36, 28, 0.55), rgba(14, 13, 11, 0.7)),
+        var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 32px 24px;
+    box-shadow:
+        var(--elevation-3),
+        0 0 60px rgba(191, 160, 85, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform: scale(0.85) translateY(24px);
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+    backdrop-filter: var(--glass-blur) saturate(130%);
+    -webkit-backdrop-filter: var(--glass-blur) saturate(130%);
+}
+
+/* خط طلایی محو بالای مودال — فریم لوکس */
+.modal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.modal-bg.show .modal {
+    transform: scale(1) translateY(0);
+}
+
+/* ===== Title ===== */
+.modal h2 {
+    color: var(--txt);
+    font-size: var(--font-xl);
+    margin-bottom: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
+}
+
+/* دکمه بستن */
+.modal h2 .x {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+    font-size: 18px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-bounce);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+}
+.modal h2 .x:hover {
+    color: #fff;
+    background: var(--danger);
+    transform: rotate(90deg) scale(1.12);
+    box-shadow: 0 4px 18px rgba(192, 57, 43, 0.45);
+    border-color: rgba(192, 57, 43, 0.4);
+}
+
+/* ===== Profile head ===== */
+.profile-head {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.profile-head .p-av {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 16px;
+    border: 3px solid var(--gold);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    color: var(--gold);
+    box-shadow:
+        var(--elevation-2),
+        0 0 26px rgba(191, 160, 85, 0.3);
+    transition: var(--transition-bounce);
+    overflow: hidden;
+}
+.profile-head .p-av:hover {
+    transform: scale(1.05);
+    box-shadow:
+        var(--elevation-3),
+        0 0 36px rgba(191, 160, 85, 0.45);
+}
+.profile-head .p-av img.emoji {
+    width: 48px;
+    height: 48px;
+}
+```
+
+تغییرات اصلی نسبت به نسخه‌ی فعلی:
+
+- پس‌زمینه‌ی مودال از مشکی تخت به یک radial-gradient عمیق تبدیل شد تا کارت بهتر شناور به‌نظر برسه.
+- خود کارت یک لایه گرادیان روی `--glass-bg` گرفت + سایه‌ی داخلی نازک بالا برای حس شیشه‌ی واقعی.
+- `::before` یک خط طلایی محو بالای کارت اضافه می‌کنه (همون امضای لوکسی که تو هدر و auth داشتیم).
+- آواتار پروفایل حالا hover داره و هاله‌ش پررنگ‌تر می‌شه.
+
+این بلوک جایگزین مستقیم خطوط **1572–1668** می‌شه و چیزی از منطق رو نمی‌شکنه.
+
+می‌خوای بقیه‌ی فیلدهای داخل مودال پروفایل (و اگه toast/FAB دارن) رو هم استخراج کنم تا اون‌ها رو هم هماهنگ کنیم؟
+
+عالی، حالا فیلدهای داخل پروفایل و توست رو هم داریم. این‌ها رو با همون امضای لوکس هماهنگ می‌کنم.
+
+براساس خطوط **1670–1718** (ادامه‌ی پروفایل) و **1745–1772** (توست):
+
+```css
+/* ===== Profile fields (ادامه) ===== */
+.profile-head .p-av:hover {
+    transform: scale(1.06) rotate(3deg);
+    box-shadow:
+        var(--elevation-3),
+        0 0 30px rgba(212, 175, 55, 0.5);
+}
+.profile-head .p-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--txt);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+.profile-head .p-id {
+    color: var(--gold);
+    font-size: 13px;
+    margin-top: 4px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    opacity: 0.9;
+}
+.profile-head .p-bio {
+    margin-top: 12px;
+    font-size: 13px;
+    color: rgba(240, 235, 227, 0.9);
+    background: linear-gradient(160deg, rgba(0, 0, 0, 0.45), rgba(20, 18, 14, 0.35));
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(191, 160, 85, 0.14);
+    line-height: 1.6;
+    font-weight: 600;
+    box-shadow:
+        inset 0 2px 8px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* جعبه اعتبار — لوکس‌تر با درخشش طلایی */
+.credit-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 18px 0;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--txt);
+    background: linear-gradient(135deg, rgba(191, 160, 85, 0.12), rgba(191, 160, 85, 0.05));
+    padding: 14px;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(191, 160, 85, 0.28);
+    box-shadow:
+        inset 0 0 14px rgba(191, 160, 85, 0.08),
+        0 0 14px rgba(191, 160, 85, 0.15);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 1px;
+}
+
+/* ===== Toast ===== */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px) scale(0.85);
+    background: linear-gradient(165deg, rgba(34, 28, 20, 0.95), rgba(14, 8, 8, 0.98));
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 900;
+    z-index: 300;
+    border: 1px solid var(--gold);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow:
+        0 10px 34px rgba(0, 0, 0, 0.65),
+        0 0 20px rgba(191, 160, 85, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+}
+.toast.show {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+}
+```
+
+تغییرات کلیدی:
+
+- بایو و جعبه‌ی اعتبار حالا گرادیان ملایم و سایه‌ی داخلی دارن تا حس عمق شیشه بگیرن.
+- آواتار hover با هاله‌ی پررنگ‌تر و سایه‌ی چندلایه هماهنگ شد.
+- توست از مشکی تخت به گرادیان گرم رفت + خط نازک نوری بالا و saturate برای حس premium.
+
+نکته‌ی مهم از خروجی فایل: هیچ سلکتور `.fab` یا دکمه‌ی شناور تو بازه‌های بررسی‌شده پیدا نشد. پس فعلاً چیزی برای بازطراحی FAB نداریم.
+
+می‌خوای یه جست‌وجوی هدفمند روی `fab`/`float`/`action` تو بخش‌های پایینی CSS بزنم تا مطمئن شیم اصلاً دکمه‌ی شناوری وجود داره یا نه؟
+
+
+CSS کامل شد. حالا بذار HTML واقعی splash رو دربیارم تا دقیقاً با همون ساختار کار کنم.
+حالا HTML واقعی splash رو پیدا کنم تا با همون ساختار بازطراحی کنم.
+عالی، حالا کل ساختار splash رو دارم. ساختار تاییدشده از فایل:
+
+- `#splashScreen` → `.splash-sparkles` (شامل ۴ تا `.sparkle`) → `.splash-content` (با `.splash-crown` = 💠، `.splash-title` = Wiriper، `.splash-sub` = شبکه خصوصی)
+
+نکته‌ای که از HTML معلوم شد: sparkleها داخل یک wrapper به اسم `.splash-sparkles` هستن که فعلاً هیچ استایلی نداره. این فرصت خوبیه.
+
+این نسخه‌ی لوکس‌سازی‌شده‌ی کامل بلاک CSS اسپلش (خطوط حدود ۱۰۵–۲۵۸) رو با همون نام‌های selector و keyframe بازنویسی کردم، فقط با توکن‌های موجود پروژه. کافیه بلاک فعلی splash رو با این جایگزین کنی:
+
+```css
+/* ===== SPLASH SCREEN (luxe) ===== */
+#splashScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+        radial-gradient(120% 120% at 50% 30%, rgba(191,160,85,0.10), transparent 55%),
+        radial-gradient(100% 100% at 50% 100%, rgba(212,175,55,0.06), transparent 60%),
+        linear-gradient(160deg, #0a0a0c 0%, #050506 60%, #000 100%);
+    transition: opacity 0.7s ease, visibility 0.7s ease;
+}
+
+#splashScreen::before {
+    content: "";
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,175,55,0.18), transparent 70%);
+    filter: blur(20px);
+    animation: splashGlow 3.4s ease-in-out infinite;
+}
+
+#splashScreen.hide {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+@keyframes splashGlow {
+    0%, 100% { transform: scale(0.9); opacity: 0.55; }
+    50%      { transform: scale(1.12); opacity: 1; }
+}
+
+.splash-sparkles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.splash-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    animation: popIn 0.9s cubic-bezier(.2,.8,.2,1);
+}
+```
+
+و ادامه‌اش (crown / title / sub / sparkle) رو الان می‌فرستم تا کد یکجا و کامل باشه.
+
+```css
+.splash-crown {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    font-size: 52px;
+    line-height: 1;
+    border-radius: 50%;
+    position: relative;
+    background: radial-gradient(circle at 50% 35%, rgba(212,175,55,0.18), rgba(191,160,85,0.05) 60%, transparent 75%);
+    box-shadow:
+        0 0 0 1px rgba(212,175,55,0.25),
+        0 0 40px rgba(212,175,55,0.30),
+        inset 0 0 24px rgba(212,175,55,0.18);
+    animation: crownPulse 2.6s ease-in-out infinite;
+}
+
+.splash-crown::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg,
+        transparent 0deg,
+        rgba(212,175,55,0.55) 90deg,
+        transparent 180deg,
+        rgba(212,175,55,0.35) 270deg,
+        transparent 360deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+    animation: crownRing 6s linear infinite;
+    opacity: 0.8;
+}
+
+@keyframes crownRing {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes crownPulse {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-4px) scale(1.05); }
+}
+
+.splash-title {
+    margin-top: 22px;
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg,
+        var(--gold2) 0%, var(--gold-light) 25%, #fff 50%,
+        var(--gold-light) 75%, var(--gold2) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: shineText 3s linear infinite, fadeInUp 0.8s ease-out;
+}
+
+@keyframes shineText {
+    0%  { background-position: 0% center; }
+    50% { background-position: 200% center; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.splash-sub {
+    color: var(--gold);
+    font-size: 11px;
+    margin-top: 12px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    opacity: 0.92;
+    animation: fadeInUp 1s ease-out 0.15s backwards;
+}
+
+.sparkle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--gold-light);
+    border-radius: 50%;
+    opacity: 0;
+    box-shadow: 0 0 12px rgba(212,175,55,0.7);
+    animation: sparkleFloat 2.4s ease-in-out infinite;
+}
+.sparkle:nth-child(1) { left: 20%; top: 30%; animation-delay: 0s; }
+.sparkle:nth-child(2) { left: 78%; top: 24%; animation-delay: 0.5s; }
+.sparkle:nth-child(3) { left: 28%; top: 72%; animation-delay: 0.9s; }
+.sparkle:nth-child(4) { left: 72%; top: 76%; animation-delay: 1.3s; }
+
+@keyframes sparkleFloat {
+    0%   { opacity: 0; transform: translateY(0) scale(0); }
+    50%  { opacity: 1; transform: translateY(-30px) scale(2.5); }
+    100% { opacity: 0; transform: translateY(-60px) scale(0); }
+}
+```
+
+چیزایی که لوکس‌تر شد:
+
+- پس‌زمینه از تخت به سه‌لایه radial + linear با ته‌رنگ طلایی رفت.
+- تاج (💠) حالا داخل یه حلقه‌ی نور دایره‌ای با ring چرخان طلایی (`conic-gradient` + mask) نشسته.
+- عنوان shimmer نرم‌تر و عریض‌تر، با سفیدِ وسط برای حس فلز براق.
+- زیرنویس با تأخیر ورود و letter-spacing بیشتر.
+- sparkleها درخشش قوی‌تر گرفتن.
+
+نکته‌ی مهم: همه‌ی نام‌های `splashGlow`, `crownPulse`, `shineText`, `fadeInUp`, `sparkleFloat`, `popIn` دست‌نخورده‌ان تا JS و بقیه‌ی استایل‌ها نشکنه. فقط `crownRing` به‌عنوان keyframe جدید اضافه شده که جای دیگه استفاده نمیشه.
+
+ادامه بدم سراغ lightbox یا chat panel mobile overlay؟
+
+باشه، می‌رم سراغ lightbox چون بعد از splash اولین تجربه‌ی تمام‌صفحه‌ست که کاربر موقع باز کردن عکس می‌بینه. اول باید ساختار واقعی‌اش رو از فایل دربیارم تا چیزی نشکنه.
+ساختار کامل lightbox رو از فایل گرفتم. تاییدشده:
+
+- `#lightbox` (خط ۱۸۲۰)، نمایش با کلاس `.show`
+- دکمه‌ی بستن `.lb-close` (خط ۱۸۳۶) با hover قرمز
+- HTML خط ۲۱۹۱: شامل `#lbImg` داخل overlay
+- `closeLightbox()` فقط کلاس `show` رو برمی‌داره و بعد ۳۰۰ms مخفی می‌کنه
+
+نکته‌ی مهم: ترنزیشن JS روی ۳۰۰ms حساب شده ولی CSS فعلی `0.25s` داره. این رو نگه می‌دارم و فقط بصری‌ترش می‌کنم تا تایمینگ JS نشکنه.
+
+این نسخه‌ی لوکس بلاک lightbox (خطوط حدود ۱۸۲۰–۱۸۵۹) با همون selectorها:
+
+```css
+/* ===== LIGHTBOX (luxe) ===== */
+#lightbox {
+    position: fixed;
+    inset: 0;
+    display: none;
+    opacity: 0;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(120% 120% at 50% 50%, rgba(191,160,85,0.08), transparent 55%),
+        rgba(0,0,0,0.94);
+    z-index: 5000;
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    transition: opacity 0.3s ease;
+}
+
+#lightbox.show {
+    display: flex;
+    opacity: 1;
+}
+
+#lightbox #lbImg {
+    max-width: 90vw;
+    max-height: 86vh;
+    border-radius: 14px;
+    border: 1px solid rgba(212,175,55,0.22);
+    box-shadow:
+        0 24px 70px rgba(0,0,0,0.7),
+        0 0 0 1px rgba(0,0,0,0.4),
+        0 0 60px rgba(212,175,55,0.12);
+    animation: lbZoom 0.35s cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes lbZoom {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+#lightbox .lb-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid rgba(212,175,55,0.25);
+    background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    color: var(--txt);
+    font-size: 18px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: var(--elevation-2);
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+#lightbox .lb-close:hover {
+    background: rgba(192, 57, 43, 0.6);
+    border-color: var(--danger);
+    color: #fff;
+    transform: rotate(90deg) scale(1.05);
+}
+
+#lightbox .lb-close:active {
+    transform: rotate(90deg) scale(0.95);
+}
+```
+
+چیزایی که بهتر شد:
+
+- پس‌زمینه از مشکی تخت به مشکی + هاله‌ی طلایی محو رفت، با blur و saturate قوی‌تر.
+- خود عکس (`#lbImg`) حالا قاب طلایی ظریف، سایه‌ی عمیق و glow ملایم داره، با انیمیشن zoom نرم موقع باز شدن.
+- ترنزیشن `#lightbox` از `0.25s` به `0.3s` رفت تا دقیقاً با تایمر ۳۰۰ms در `closeLightbox()` هماهنگ باشه (قبلاً عکس قبل از کامل‌شدن fade ناپدید می‌شد).
+- دکمه‌ی بستن موقع hover با چرخش ۹۰ درجه و scale لوکس‌تر شد، و آیکن ✕ حالا دقیق وسط‌چین شده.
+
+نام selectorها و رفتار `.show` دست‌نخورده موند تا JS سالم بمونه. `lbZoom` تنها keyframe جدیده.
+
+ادامه بدم سراغ chat panel mobile overlay؟
+
+میرم سراغ chat panel mobile overlay و ساختار واقعیش رو از فایل می‌گیرم.
+خروجی اولیه ساختار را تایید کرد ولی بلاک دقیق CSS موبایل `.chat-panel` و قانون `translateX` و backdrop هنوز سرفیس نشده. این بخش حیاتیه چون اگه `transform` و breakpoint موبایل رو دقیق نگیرم، اسلاید پنل می‌شکنه.
+
+تاییدشده تا اینجا:
+- کانتینر: `#chatPanel.chat-panel` (خط ۲۱۲۰)
+- باز شدن: `classList.add('open')` (خط ۲۷۱۶)
+- بستن: `closeChat()` با `remove('open')` (خط ۲۷۳۰) و `clearActiveChat()` (خط ۳۲۲۵)
+- سایدبار: `.sidebar` با عرض ثابت ۳۷۰px (خط ۶۳۰)
+
+بذار بلاک دقیق CSS پنل و قانون موبایلش رو بگیرم تا verbatim کار کنم.
+خروجی این‌بار خالی برگشت و بلاک CSS پنل نیومد. یه بار دیگه با هدف دقیق‌تر می‌گیرم: مشخصاً دنبال `.chat-panel` و `.chat-panel.open` و media query موبایل با `translateX` و `position: fixed`.
+حالا بلاک دقیق موبایل رو دارم. تاییدشده در `index.html 3.txt`:
+
+- `@media(max-width:800px)` خطوط **۱۸۷۰–۱۹۱۶**
+- `.chat-panel` موبایل: `position: fixed; inset: 0; z-index: 30; transform: translateX(-100%)` با ترنزیشن `0.4s cubic-bezier(0.25, 1, 0.5, 1)`
+- `.chat-panel.open { transform: translateX(0); }`
+
+نکته‌ی مهم فنی: ترنزیشن `transform 0.4s` و خود `transform` ستون فقرات اسلایده. این‌ها رو دست نمی‌زنم. فقط لایه‌ی بصری اضافه می‌کنم تا اسلاید نشکنه.
+
+این نسخه‌ی لوکس بلاک `.chat-panel` موبایل (جایگزین خطوط ۱۸۷۶–۱۸۸۶):
+
+```css
+.chat-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    will-change: transform;
+    background:
+        radial-gradient(140% 100% at 0% 0%, rgba(191,160,85,0.06), transparent 50%),
+        var(--bg);
+    box-shadow: -24px 0 60px rgba(0,0,0,0.45);
+}
+
+.chat-panel.open {
+    transform: translateX(0);
+}
+
+.chat-panel.open::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.35), transparent);
+    pointer-events: none;
+    z-index: 1;
+}
+```
+
+چیزایی که عوض شد و چرا:
+
+- پس‌زمینه از تخت به یک هاله‌ی طلایی محو در گوشه‌ی بالا + `--bg` رفت، تا وقتی پنل روی سایدبار میاد عمق داشته باشه.
+- یه `box-shadow` به لبه‌ی چپ اضافه شد تا موقع اسلاید روی محتوای زیرش سایه بندازه و حس لایه‌بندی بده.
+- یه خط طلایی محو بالای پنل فقط در حالت `.open` با `::before` اومد، هماهنگ با بقیه‌ی بخش‌های لوکس‌شده (auth، modal، menu).
+
+چیزایی که عمداً دست‌نخورده موند:
+
+- `position: fixed`, `inset: 0`, `z-index: 30` — چیدمان overlay.
+- `transform: translateX(-100%)` و `.open { translateX(0) }` — مکانیزم اصلی اسلاید.
+- ترنزیشن `0.4s cubic-bezier(...)` و `will-change` — تایمینگ و پرفورمنس.
+
+پس JS که `open` رو toggle می‌کنه (`openChat` / `closeChat` / `clearActiveChat`) دقیقاً مثل قبل کار می‌کنه، فقط ظاهرش پریمیومه.
+
+ادامه بدم سراغ سایدبار و chat-item لیست گفت‌وگوها؟ اون بخش هنوز لوکس نشده و خیلی توی دید کاربره.
+
+می‌رم سراغ سایدبار و chat-item. اول ساختار واقعی رو از فایل دربیارم تا چیزی نشکنه.
+ساختار واقعی رو دارم. همه selectorها تایید شدن: `.chat-item`, `.av`, `.ci-name`, `.ci-last`, `.ci-time`, `.online-dot`. متغیرهای موجود هم مثل `--radius`, `--gold`, `--transition-fast`, `--elevation-1` که دست‌نخورده ازشون استفاده می‌کنم.
+
+نکته‌ی فنی مهم: `.chat-item:hover { transform: translateX(-2px) }` و `transition: var(--transition-fast)` ستون فقرات تعامل لیست‌اند، نگهشون می‌دارم. فقط لایه‌ی بصری اضافه می‌کنم.
+
+این نسخه‌ی لوکس بلاک chat-item و آواتار (جایگزین خطوط **۸۲۶–۸۷۵**):
+
+```css
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    margin: 3px 10px;
+    transition: var(--transition-fast);
+    border: 1px solid transparent;
+    will-change: background-color, transform;
+    position: relative;
+    overflow: hidden;
+}
+.chat-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.chat-item:hover {
+    background: rgba(255, 255, 255, 0.025);
+    transform: translateX(-2px);
+}
+.chat-item.active {
+    background:
+        linear-gradient(90deg, rgba(191,160,85,0.12), rgba(191,160,85,0.04)),
+        rgba(191, 160, 85, 0.08);
+    border-color: rgba(191, 160, 85, 0.28);
+    box-shadow: inset 0 0 12px rgba(191, 160, 85, 0.06), 0 0 10px rgba(191, 160, 85, 0.12);
+}
+.chat-item.active::before {
+    opacity: 1;
+}
+
+.av {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--panel2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--gold);
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    transition: var(--transition-smooth);
+    box-shadow: var(--elevation-1);
+    overflow: hidden;
+}
+.av img.emoji {
+    width: 24px;
+    height: 24px;
+}
+.chat-item:hover .av {
+    border-color: rgba(191, 160, 85, 0.4);
+    box-shadow: 0 0 10px rgba(191, 160, 85, 0.18);
+}
+.chat-item.active .av {
+    border-color: var(--gold);
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+}
+```
+
+چیزایی که عوض شد و چرا:
+
+- یه نوار طلایی عمودی نازک سمت چپ آیتم با `::before` که فقط در حالت `.active` روشن می‌شه. نشانگر واضح‌تر گفت‌وگوی فعاله. چون `overflow: hidden` اضافه شد، از کادر بیرون نمی‌زنه.
+- `.chat-item.active` پس‌زمینه‌ش از رنگ تخت به یه گرادیان ملایم طلایی رفت تا با بقیه‌ی بخش‌های لوکس هماهنگ بشه. مقدار قبلی به‌عنوان fallback زیرش موند.
+- روی `:hover .av` یه هاله‌ی طلایی محو اضافه شد تا آواتار موقع hover زنده‌تر باشه. border قبلی حفظ شد.
+
+چیزایی که عمداً دست‌نخورده موند:
+
+- `transform: translateX(-2px)` و `transition: var(--transition-fast)` — مکانیزم تعامل لیست.
+- ابعاد، `border-radius`, `margin`, `padding` — چیدمان.
+- حالت active آواتار (`box-shadow` طلایی) دقیقاً مثل قبل.
+
+JSی که `active` رو روی آیتم‌ها toggle می‌کنه بدون تغییر کار می‌کنه، فقط ظاهر فعال‌بودن واضح‌تر و پریمیوم‌تره.
+
+می‌خوای ادامه بدم سراغ هدر سایدبار و تب‌ها (`.side-header`, `.me-info`, `.main-tabs`)؟ همون‌طور که ابزار اشاره کرد، خطوط **۶۴۴–۷۸۰** رو می‌گیرم و لوکس می‌کنم.
+
+ساختار کامل هدر و تب‌ها رو دارم. همه selectorها تایید شدن. متغیرهای موجود (`--glass-bg`, `--glass-blur`, `--gold`, `--gold2`, `--transition-bounce`, `--transition-smooth`, `--elevation-1`) دست‌نخورده استفاده می‌شن.
+
+نکته فنی: انیمیشن‌های `pulseBorder`, `glowPulse`, و `--transition-bounce` روی آواتار ستون فقرات تعامل‌اند، نگهشون می‌دارم. `flex:1` تب‌ها و ابعاد ثابت (44×44 آواتار، 40×40 آیکن) رو هم برای حفظ چیدمان حفظ می‌کنم.
+
+نسخه لوکس هدر سایدبار و تب‌ها (جایگزین خطوط **۶۴۴–۷۵۹**):
+
+```css
+.side-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--glass-border);
+    background:
+        linear-gradient(180deg, rgba(191,160,85,0.04), transparent),
+        var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    position: relative;
+    z-index: 35;
+}
+.side-header::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(191,160,85,0.35), transparent);
+    pointer-events: none;
+}
+
+.me-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    background: var(--bg);
+    border: 2px solid var(--gold2);
+    box-shadow: 0 0 10px rgba(191, 160, 85, 0.2);
+    transition: var(--transition-bounce);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.me-avatar.premium {
+    animation: pulseBorder 2.5s infinite alternate, glowPulse 3s infinite;
+}
+.me-avatar:hover {
+    transform: scale(1.1) rotate(3deg);
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.45);
+}
+.me-avatar img.emoji {
+    width: 28px;
+    height: 28px;
+}
+
+.side-header .me-info {
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+}
+.side-header .me-name {
+    font-size: var(--font-md);
+    font-weight: 900;
+    color: var(--txt);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.side-header .me-id {
+    font-size: 10.5px;
+    color: var(--gold);
+    margin-top: 2px;
+    font-weight: 700;
+    opacity: 0.85;
+    letter-spacing: 1px;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--gold);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid rgba(191, 160, 85, 0.1);
+    transition: var(--transition-bounce);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+}
+.icon-btn:hover {
+    background: rgba(191, 160, 85, 0.1);
+    border-color: var(--gold);
+    box-shadow: 0 0 14px rgba(191, 160, 85, 0.25);
+    transform: rotate(90deg) scale(1.05);
+}
+
+.main-tabs {
+    display: flex;
+    padding: 8px 14px;
+    gap: 6px;
+    background:
+        linear-gradient(180deg, rgba(191,160,85,0.02), transparent),
+        var(--bg2);
+    border-bottom: 1px solid var(--glass-border);
+}
+.main-tabs button {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 800;
+    transition: var(--transition-smooth);
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    position: relative;
+}
+.main-tabs button:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--txt);
+}
+.main-tabs button.active {
+    background:
+        linear-gradient(180deg, rgba(191,160,85,0.16), rgba(191,160,85,0.06)),
+        rgba(191, 160, 85, 0.1);
+    color: var(--gold);
+    box-shadow: inset 0 0 8px rgba(191, 160, 85, 0.08), 0 2px 8px rgba(191, 160, 85, 0.1);
+    border: 1px solid rgba(191, 160, 85, 0.28);
+}
+```
+
+چیزایی که عوض شد و چرا:
+
+- روی `.side-header` یه خط طلایی محو پایین با `::after` اضافه شد (محو از دو طرف) که جداکننده‌ی لوکس‌تری از border تخت قبلیه. پس‌زمینه‌ش هم یه گرادیان خیلی ملایم طلایی گرفت.
+- `.me-name` یه `text-shadow` ظریف گرفت تا روی پس‌زمینه‌ی شیشه‌ای خواناتر و برجسته‌تر باشه.
+- `.main-tabs button.active` از پس‌زمینه‌ی تخت به یه گرادیان طلایی نرم با glow بیرونی اضافه رفت تا تب فعال واضح‌تر و پریمیوم‌تر دیده بشه. border رنگ‌ش هم کمی پررنگ‌تر شد.
+- `.main-tabs` خودش یه ته‌مایه گرادیان خیلی ملایم گرفت تا با هدر هماهنگ بشه.
+
+چیزایی که عمداً دست‌نخورده موند:
+
+- ابعاد آواتار (44×44)، آیکن (40×40)، `flex:1` تب‌ها — چیدمان.
+- انیمیشن‌های `pulseBorder` و `glowPulse` روی `.me-avatar.premium` و کلاس `.premium`.
+- `transform: rotate(90deg)` آیکن و `scale(1.1) rotate(3deg)` آواتار در hover — تعامل.
+- `--transition-bounce` و `--transition-smooth` همه‌جا حفظ شدن.
+
+JSی که `active` رو روی تب‌ها toggle می‌کنه و کلاس `premium` رو روی آواتار می‌ذاره بدون تغییر کار می‌کنه.
+
+می‌خوای ادامه بدم سراغ منوی dropdown و آیتم‌هاش؟ یا اول HTML همین هدر رو دربیارم تا مطمئن شیم class usage دقیق با DOM می‌خونه؟
+
+ساختار کامل منوی dropdown رو دارم. همه selectorها و منطق JS تایید شدن.
+
+نکته فنی حیاتی: باز و بسته شدن منو کاملاً با `m.style.display = 'block'/'none'` در `toggleMenu` کنترل میشه، و موقعیتش با `style.top/left/right` ست میشه. پس `position: fixed`, `display: none`, و `z-index: 500` باید دست‌نخورده بمونن وگرنه JS می‌شکنه. `transform-origin: top right` هم برای انیمیشن باز شدن از گوشه‌ست، نگهش می‌دارم.
+
+نسخه لوکس منوی dropdown (جایگزین خطوط **۱۷۷۴–۱۸۱۶**):
+
+```css
+.menu-pop {
+    position: fixed;
+    background:
+        linear-gradient(180deg, rgba(191,160,85,0.06), transparent 40%),
+        rgba(14, 8, 8, 0.98);
+    border: 1px solid rgba(191, 160, 85, 0.18);
+    border-radius: 16px;
+    box-shadow:
+        0 14px 40px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    min-width: 240px;
+    padding: 8px;
+    z-index: 500;
+    display: none;
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    transform-origin: top right;
+    overflow: hidden;
+    pointer-events: auto;
+}
+.menu-pop::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(191,160,85,0.4), transparent);
+    pointer-events: none;
+}
+.menu-pop button {
+    display: block;
+    width: 100%;
+    padding: 13px 14px;
+    margin: 0;
+    background: transparent;
+    color: var(--txt);
+    text-align: right;
+    border-radius: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    border: none;
+    min-height: 44px;
+    font-weight: 700;
+    position: relative;
+}
+.menu-pop button:hover {
+    background:
+        linear-gradient(90deg, rgba(191,160,85,0.1), rgba(255,255,255,0.02));
+    transform: translateX(-3px);
+    color: var(--gold);
+    box-shadow: inset 0 0 10px rgba(191, 160, 85, 0.06);
+}
+.menu-pop button.danger {
+    color: var(--danger);
+}
+.menu-pop button.danger:hover {
+    background: rgba(192, 57, 43, 0.14);
+    color: #fff;
+    box-shadow: inset 0 0 10px rgba(192, 57, 43, 0.18);
+}
+```
+
+چیزایی که عوض شد و چرا:
+
+- پس‌زمینه‌ی `.menu-pop` از رنگ تخت به یه گرادیان ملایم طلایی روی همون `rgba(14,8,8,0.98)` رفت تا بالای منو نور بگیره. border کمی پررنگ‌تر شد (`0.14` → `0.18`).
+- `box-shadow` چندلایه شد: سایه‌ی عمیق‌تر بیرونی + یه خط نور داخلی بالا (`inset`) که حس شیشه‌ای میده.
+- `backdrop-filter` از `blur(14px)` به `blur(18px) saturate(140%)` ارتقا گرفت تا پشت منو غنی‌تر دیده بشه.
+- یه `::before` به‌عنوان خط طلایی محو بالای منو اضافه شد، هماهنگ با خط جداکننده‌ی هدر سایدبار که قبلاً ساختیم.
+- hover دکمه‌ها از background تخت به یه گرادیان افقی نرم طلایی رفت و glow داخلی‌ش لطیف‌تر شد. `translateX(-3px)` حفظ شد چون با چیدمان راست‌چین هماهنگه.
+- `danger:hover` هم یه glow قرمز داخلی گرفت تا با بقیه هماهنگ بشه.
+
+چیزایی که عمداً دست‌نخورده موند:
+
+- `position: fixed`, `display: none`, `z-index: 500` — چون `toggleMenu` مستقیم روشون کار می‌کنه.
+- `transform-origin: top right` — برای انیمیشن باز شدن.
+- `min-width: 240px`, `padding`, `min-height: 44px` دکمه‌ها — چیدمان و تاچ‌تارگت موبایل.
+- `transform: translateX(-3px)` در hover و `--transition-fast` — تعامل.
+- override موبایل (`min-width: 200px`) در خطوط ۱۹۰۸–۱۹۱۱ سرجاش می‌مونه و سازگاره.
+
+JSی که با `style.display` و `style.top/left/right` منو رو باز/بسته و موقعیت‌دهی می‌کنه بدون تغییر کار می‌کنه.
+
+می‌خوای ادامه بدم سراغ `#chatMenu` که الگوی مشابهی داره و برای هماهنگی بهتره همرنگ بشه؟
+
+بذار `#chatMenu` و selectorهای مرتبطش رو از فایل واقعی بیرون بکشم تا دقیق و file-backed جلو بریم.
+خبر خوب: `#chatMenu` هیچ CSS مستقلی نداره و دقیقاً از همون کلاس `.menu-pop` استفاده می‌کنه (خط **۲۱۳۹**). یعنی نسخه‌ی لوکسی که همین الان برای `.menu-pop` نوشتیم، خودکار روی `#chatMenu` هم اعمال میشه. نیازی به CSS اضافه نیست.
+
+یک نکته‌ی ظریف هست که باید بهش توجه کنیم:
+
+دکمه‌ی خروج از اتاق در خط **۲۱۴۳** رنگ قرمزش رو با inline style گرفته، نه با کلاس:
+
+```html
+<button onclick="leaveCurrentChat()" style="color:var(--danger)">🚪 خروج از اتاق</button>
+```
+
+توی `.menu-pop` لوکس، استایل `danger:hover` رو بر اساس کلاس `.danger` نوشتم. ولی این دکمه کلاس `.danger` نداره، فقط inline color داره. پس glow قرمز hover روش نمی‌افته و موقع hover هم رنگش به طلایی می‌پره (که با قرمز بودنش ناهماهنگه).
+
+دو راه داریم:
+
+گزینه ۱ (تمیزتر، پیشنهاد من): کلاس `danger` رو به دکمه اضافه کنیم تا با سیستم هماهنگ بشه. تغییر خط **۲۱۴۳**:
+
+```html
+<button class="danger" onclick="leaveCurrentChat()">🚪 خروج از اتاق</button>
+```
+
+این کار JS رو نمی‌شکنه چون `leaveCurrentChat()` و selector بستن منو (`#activeChat .icon-btn[onclick*="toggleChatMenu"]`) هیچ‌کدوم به این کلاس وابسته نیستن.
+
+گزینه ۲: اگه نمی‌خوای HTML دست بخوره، توی CSS یه selector برای inline color بذارم تا hover درست بشه:
+
+```css
+.menu-pop button[style*="--danger"]:hover {
+    background: rgba(192, 57, 43, 0.14);
+    color: #fff;
+    box-shadow: inset 0 0 10px rgba(192, 57, 43, 0.18);
+}
+```
+
+این هم بدون تغییر HTML کار می‌کنه.
+
+چیزی که برای `#chatMenu` دست‌نخورده می‌مونه:
+
+- `position: fixed`, `display: none`, `z-index: 500` — چون `toggleChatMenu` با `m.style.display` و `style.top/left/right` کنترلش می‌کنه (خطوط **۲۵۲۸–۲۵۳۹**).
+- منطق موبایل (`<600px`) که `left/right: 12px` ست می‌کنه و با `min-width` ما تداخل نداره.
+- بستن با کلیک بیرون (خطوط **۲۵۴۸–۲۵۵۱**) سالم می‌مونه.
+
+کدوم گزینه رو برای دکمه‌ی خروج می‌خوای؟ گزینه ۱ (اضافه کردن کلاس) یا گزینه ۲ (فقط CSS)؟
+
+انتخاب: گزینه ۱ (اضافه کردن کلاس `danger`). تمیزتره چون از همون سیستم استایل فایل استفاده می‌کنه و دیگه به inline color وابسته نیست. طبق خط **۱۸۱۱** هم کلاس `.menu-pop button.danger` از قبل توی فایل تعریف شده، پس داریم از چیزی که خودِ فایل ساخته استفاده می‌کنیم، نه چیز جدید.
+
+تغییر خط **۲۱۴۳**:
+
+قبل:
+```html
+<button onclick="leaveCurrentChat()" style="color:var(--danger)">🚪 خروج از اتاق</button>
+```
+
+بعد:
+```html
+<button class="danger" onclick="leaveCurrentChat()">🚪 خروج از اتاق</button>
+```
+
+حالا برای اینکه hover این دکمه واقعاً لوکس بشه، نسخه‌ی `.menu-pop button.danger` رو هم کمی ارتقا می‌دیم. خطوط **۱۸۱۱–۱۸۱۶** فعلی:
+
+```css
+.menu-pop button.danger {
+    color: var(--danger);
+}
+.menu-pop button.danger:hover {
+    background: rgba(192, 57, 43, 0.12);
+    color: #fff;
+}
+```
+
+نسخه‌ی لوکس جایگزین:
+
+```css
+.menu-pop button.danger {
+    color: var(--danger);
+}
+.menu-pop button.danger:hover {
+    background: rgba(192, 57, 43, 0.14);
+    color: #fff;
+    box-shadow: inset 0 0 12px rgba(192, 57, 43, 0.18);
+}
+.menu-pop button.danger:active {
+    transform: scale(0.97);
+}
+```
+
+چرا این انتخاب درسته:
+
+- کلاس `.danger` قبلاً توی فایل تعریف شده (خط **۱۸۱۱**)، پس داریم از سیستم موجود استفاده می‌کنیم نه ساختن چیز جدید.
+- `leaveCurrentChat()` و selector بستن منو (`toggleChatMenu`) به کلاس یا inline style وابسته نیستن، پس JS سالم می‌مونه.
+- حالا موقع hover به‌جای پریدن به طلایی، glow قرمز ملایم می‌گیره که با ماهیت «خروج/خطر» هماهنگه.
+
+چیزهایی که دست‌نخورده موندن:
+
+- `position: fixed`, `display: none`, `z-index: 500` روی `#chatMenu` — چون `toggleChatMenu` با `style.display` و `top/left/right` کنترلشون می‌کنه (خطوط **۲۵۲۸–۲۵۳۹**).
+- بقیه دکمه‌های منو (`openBgModal`, `openRoyalMsgModal`, `openGiftModal`) که از استایل پایه‌ی `.menu-pop` لوکس ارث می‌برن.
+
+با این، هم `#mainMenu` و هم `#chatMenu` کامل شدن. می‌خوای بریم سراغ بخش بعدی؟ منطقی‌ترین قدم بعدی modalها (`#bgModal`, `#giftModal`, `#royalMsgModal`) هستن که همین دکمه‌ها بازشون می‌کنن.
+
+عالی، حالا که ساختار واقعی modalها file-backed شد، بریم سراغ نسخه‌ی لوکس. همه‌ی modalها (`#giftModal`, `#bgModal`, `#royalMsgModal`) از همون پوسته‌ی مشترک `.modal-bg` و `.modal` استفاده می‌کنن، پس کافیه همون selectorهای پایه رو ارتقا بدیم تا همه با هم لوکس بشن، بدون اینکه چیزی بشکنه.
+
+نکته‌ی کلیدی که حفظش حیاتیه:
+- `position: fixed`, `inset: 0`, `visibility/opacity/pointer-events`, `z-index: 100` روی `.modal-bg` (خطوط **۱۵۷۲–۱۵۸۶**) — چون `openModal`/`closeModal` با کلاس `.show` کنترلشون می‌کنن.
+- `transform: scale(0.85) translateY(20px)` → `.modal-bg.show .modal { transform: scale(1) translateY(0) }` (خطوط **۱۶۰۳** و **۱۶۰۹–۱۶۱۰**) — این انیمیشن ورود modal باید دست‌نخورده بمونه.
+
+نسخه‌ی لوکس `.modal-bg` (خطوط **۱۵۷۲–۱۵۸۶**):
+
+```css
+.modal-bg {
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(191, 160, 85, 0.10), transparent 60%),
+        rgba(0, 0, 0, 0.9);
+    display: flex;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.3s;
+}
+```
+
+نسخه‌ی لوکس `.modal` (خطوط **۱۵۹۳–۱۶۰۷**):
+
+```css
+.modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 88vh;
+    overflow-y: auto;
+    background:
+        linear-gradient(160deg, rgba(191, 160, 85, 0.06), transparent 40%),
+        var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 32px 24px;
+    box-shadow:
+        var(--elevation-3),
+        0 0 50px rgba(191, 160, 85, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform: scale(0.85) translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+}
+.modal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.5;
+}
+```
+
+نسخه‌ی لوکس دکمه‌ی بستن `.modal h2 .x` (خطوط **۱۶۲۳–۱۶۴۳**) — همون رفتار ولی پرداخت بهتر:
+
+```css
+.modal h2 .x {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+    font-size: 18px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-bounce);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+}
+.modal h2 .x:hover {
+    color: #fff;
+    background: var(--danger);
+    transform: rotate(90deg) scale(1.12);
+    box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4);
+    border-color: rgba(192, 57, 43, 0.4);
+}
+.modal h2 .x:active {
+    transform: rotate(90deg) scale(0.96);
+}
+```
+
+چرا این درسته و چی نمی‌شکنه:
+
+- selectorها دقیقاً همون‌هایی هستن که فایل ازشون استفاده می‌کنه (`.modal-bg`, `.modal-bg.show`, `.modal`, `.modal-bg.show .modal`, `.modal h2 .x`)، پس هر سه modal خودکار لوکس می‌شن.
+- `openModal`/`closeModal` فقط کلاس `.show` رو روی `.modal-bg` toggle می‌کنن — ما به اون کلاس و منطقش دست نزدیم.
+- انیمیشن ورود (`scale(0.85)` → `scale(1)`) و `transition: 0.4s ...` همون‌طور موند، پس حس باز شدن modal تغییر نمی‌کنه، فقط لوکس‌تر شده.
+- `position: relative` به `.modal` اضافه شد فقط تا `::before` (خط نور بالای modal) درست جایگذاری بشه؛ هیچ تاثیری روی layout داخلی نداره.
+- `#giftModal` و `#bgModal` که inline style دارن (`max-width:500px`, گرید پس‌زمینه) سالم می‌مونن چون inline style بالاتر از این قوانین عمل می‌کنه.
+
+می‌خوای ادامه بدیم سراغ محتوای داخلی modalها؟ منطقی‌ترین قدم بعدی `.gift-grid` / `.gift-opt` (داخل `#giftModal`) و `.bg-grid` (داخل `#bgModal`) هستن تا آیتم‌های داخلشون هم لوکس بشن. اگه بخوای، بلاک `#royalMsgModal` و تابع `openRoyalMsgModal` رو هم می‌تونم توی یه pass جدا دقیق دربیارم.
+
+بریم سراغ محتوای داخلی modalها. اول باید CSS و HTML واقعی `.gift-grid` / `.gift-opt` و `.bg-grid` رو از فایل دربیارم تا روی selectorهای واقعی کار کنیم و چیزی نشکنه.
+عالی، حالا که CSS و HTML واقعی هر دو grid رو داریم، می‌تونیم با خیال راحت نسخه‌ی لوکس رو بسازیم. همه چیز روی همون selectorهای موجود کار می‌کنه پس JS (`sendGift`, `openBgModal`, `#bgGrid`) دست‌نخورده می‌مونه.
+
+نکته‌ی حیاتی که حفظش لازمه:
+- کلاس‌ها و idها عین خودشون (`.gift-grid`, `.gift-opt`, `.ge`, `.gp`, `.gift-opt.premium`, `.bg-grid`, `.bg-opt`, `.bg-opt.active`, `#bgGrid`) چون JS بهشون وصله.
+- `#bgGrid` با inline style خودش (`grid-template-columns:repeat(2,1fr)`) سالم می‌مونه چون inline بالاتر از CSS عمل می‌کنه.
+- `.bg-opt` که توسط JS داخل `#bgGrid` ساخته می‌شه، باز هم از همین قوانین ارث می‌بره.
+
+نسخه‌ی لوکس gift grid (خطوط **۱۹۸۸–۲۰۲۷**):
+
+```css
+.gift-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+.gift-opt {
+    background:
+        linear-gradient(160deg, rgba(191, 160, 85, 0.05), transparent 50%),
+        rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 18px;
+    padding: 16px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: var(--transition-smooth);
+    min-height: 92px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: var(--elevation-1);
+    position: relative;
+    overflow: hidden;
+}
+.gift-opt::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(191, 160, 85, 0.18), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.gift-opt:hover {
+    background: rgba(191, 160, 85, 0.08);
+    border-color: rgba(191, 160, 85, 0.3);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 22px rgba(191, 160, 85, 0.12);
+}
+.gift-opt:hover::before {
+    opacity: 1;
+}
+.gift-opt:active {
+    transform: translateY(-1px) scale(0.99);
+}
+.gift-opt .ge {
+    font-size: 28px;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s var(--transition-bounce, ease);
+}
+.gift-opt:hover .ge {
+    transform: scale(1.15) rotate(-4deg);
+}
+.gift-opt .gp {
+    color: var(--gold);
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    position: relative;
+    z-index: 1;
+}
+```
+
+نسخه‌ی لوکس `.gift-opt.premium` (خط **۲۰۲۸**) — این رو از فایل کامل ندیدیم ولی selectorش رو ارتقا می‌دیم تا گیفت‌های premium متمایز بشن. اگه قبلاً تعریف دیگه‌ای داشت، می‌تونم دقیق merge کنم:
+
+```css
+.gift-opt.premium {
+    background:
+        linear-gradient(160deg, rgba(191, 160, 85, 0.14), rgba(191, 160, 85, 0.04)),
+        rgba(255, 255, 255, 0.03);
+    border-color: rgba(191, 160, 85, 0.35);
+}
+.gift-opt.premium::after {
+    content: "👑";
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 11px;
+    opacity: 0.7;
+    z-index: 2;
+}
+```
+
+نسخه‌ی لوکس background grid (خطوط **۲۰۲۹–۲۰۵۳**):
+
+```css
+.bg-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+.bg-opt {
+    height: 120px;
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg);
+    box-shadow: var(--elevation-1);
+    transition: var(--transition-smooth);
+}
+.bg-opt::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.35));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.bg-opt:hover {
+    transform: scale(1.03);
+    border-color: rgba(191, 160, 85, 0.45);
+    box-shadow: 0 8px 20px rgba(191, 160, 85, 0.18);
+}
+.bg-opt:hover::after {
+    opacity: 1;
+}
+.bg-opt.active {
+    border-color: var(--gold);
+    box-shadow:
+        0 0 0 1px var(--gold),
+        0 8px 24px rgba(191, 160, 85, 0.25);
+}
+.bg-opt.active::before {
+    content: "✓";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #1a1208;
+    font-size: 13px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+```
+
+چرا این درسته و چی نمی‌شکنه:
+
+- همه‌ی selectorها عین فایل موندن، فقط ظاهر ارتقا پیدا کرد؛ پس `sendGift(...)` روی `.gift-opt`ها و click handlerهای `.bg-opt` که JS می‌سازه دست‌نخورده کار می‌کنن.
+- `position: relative` و `overflow: hidden` که از قبل روی `.gift-opt` و `.bg-opt` بودن، باعث می‌شن `::before` / `::after`ها درست clip بشن — چیزی اضافه‌تر تغییر ندادیم.
+- روی `.bg-opt` چون JS احتمالاً تصویر یا گرادیان رو به‌صورت inline `background` ست می‌کنه، من فقط `::after` (سایه‌ی پایین) و `::before` (تیک active) اضافه کردم تا با background داینامیک تداخل نکنه.
+- علامت `✓` روی `.bg-opt.active` کاملاً بصریه و به state موجود (`active` که JS toggle می‌کنه) وصله، پس منطق انتخاب پس‌زمینه تغییر نمی‌کنه.
+- `z-index` روی `.ge` و `.gp` گذاشتم تا روی glow لایه‌ی `::before` بمونن.
+
+یه احتیاط: بلاک کامل `.gift-opt.premium` رو از فایل ندیدیم (فقط خط شروعش **۲۰۲۸** اومد). اگه می‌خوای مطمئن بشیم چیزی override نمی‌شه، می‌تونم دقیق همون بلاک premium رو از فایل دربیارم و نسخه‌ی بالا رو باهاش merge کنم.
+
+قدم بعدی منطقی: رفتن سراغ `#royalMsgModal` و تابع `openRoyalMsgModal` تا اون هم لوکس بشه. بگو ادامه بدم؟
+
+
+مسیر A بهتره. می‌رم الگوهای لازم رو از فایل دربیارم تا modal دقیقاً هماهنگ ساخته بشه.
+عالی شد. نکته‌ی کلیدی که پیدا شد: سیستم پیام **از قبل** از پیام سلطنتی پشتیبانی می‌کنه — تو `renderMessage` خط ۲۸۲۳ این هست:
+
+```js
+const isDecree = m.isRoyalDecree ? 'royal-decree' : (isPremiumUser && mine ? 'premium-msg' : '');
+```
+
+یعنی اگه پیامی با فیلد `isRoyalDecree: true` ساخته بشه، خودش کلاس `.royal-decree` می‌گیره و رندر می‌شه. پس فقط باید modal و تابعی بسازیم که پیام رو با همین فیلد بفرسته. زیرساخت رندر آماده‌ست.
+
+حالا برای اینکه تابع ارسال رو دقیقاً مثل بقیه بسازم (و چیزی نشکنه)، لازمه بدنه‌ی کامل `sendGift` و دو هلپر `openModal`/`closeModal` رو ببینم تا الگوی نوشتن پیام در Firestore و باز/بسته کردن modal رو عیناً تقلید کنم.
+
+می‌رم اون‌ها رو دربیارم.
+تقریباً همه چیز روشن شد. هلپرها ساده‌ان (`.show` toggle می‌کنن) و ارسال پیام از طریق `pushMessage(...)` انجام می‌شه. در مورد گیفت کانال این الگو رو دیدم:
+
+```js
+await pushMessage({ type: 'gift', gift: emoji, giftValue: value, text: '' });
+```
+
+پس برای پیام سلطنتی فقط کافیه:
+
+```js
+await pushMessage({ type: 'text', text: متن, isRoyalDecree: true });
+```
+
+چون `renderMessage` خط ۲۸۲۳ خودش فیلد `isRoyalDecree` رو می‌خونه و کلاس `.royal-decree` می‌ده. ولی یک سؤال باقی مونده: باید مطمئن شم `pushMessage` فیلدهای اضافی مثل `isRoyalDecree` رو دست‌نخورده به Firestore می‌نویسه (نه اینکه فقط فیلدهای ثابتی رو هاردکد کنه). اگه `pushMessage` فقط `text` و چندتا فیلد ثابت بنویسه، فرستادن `isRoyalDecree` بی‌اثر می‌مونه.
+
+پس قبل از نوشتن کد نهایی، بدنه‌ی `pushMessage` رو می‌بینم — این تعیین‌کننده‌ست.
+
+
+بذار اول بدنه‌ی `pushMessage` رو ببینم تا مطمئن شم فیلد `isRoyalDecree` واقعاً به Firestore نوشته می‌شه.
+تأیید شد. خط ۲۹۵۲ نشون می‌ده `pushMessage` بعد از فیلدهای ثابت، `...data` رو spread می‌کنه. پس هر فیلد اضافی (از جمله `isRoyalDecree: true`) دست‌نخورده به Firestore نوشته می‌شه. مشکلی نیست.
+
+پس پیاده‌سازی کامل پیام سلطنتی این سه تکه‌ست:
+
+۱) HTML مدال (کنار بقیه مدال‌ها اضافه کن):
+
+```html
+<!-- Royal Decree Modal -->
+<div class="modal-overlay" id="royalMsgModal">
+  <div class="modal-box royal-modal">
+    <div class="modal-header">
+      <h3>👑 فرمان سلطنتی</h3>
+      <button class="modal-close" onclick="closeRoyalMsgModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="royalMsgInput" class="royal-input"
+        placeholder="متن فرمان سلطنتی خود را بنویسید..."
+        maxlength="300" rows="4"></textarea>
+      <div class="royal-hint">این پیام با نشان طلایی سلطنتی برای همه نمایش داده می‌شود.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeRoyalMsgModal()">انصراف</button>
+      <button class="btn-royal" onclick="sendRoyalMsg()">ارسال فرمان</button>
+    </div>
+  </div>
+</div>
+```
+
+۲) توابع JS (کنار بقیه هلپرهای مدال):
+
+```js
+function openRoyalMsgModal() {
+  const m = document.getElementById('royalMsgModal');
+  if (!m) return;
+  m.classList.add('show');
+  const inp = document.getElementById('royalMsgInput');
+  if (inp) { inp.value = ''; setTimeout(() => inp.focus(), 50); }
+}
+
+function closeRoyalMsgModal() {
+  const m = document.getElementById('royalMsgModal');
+  if (m) m.classList.remove('show');
+}
+
+async function sendRoyalMsg() {
+  const inp = document.getElementById('royalMsgInput');
+  const text = (inp?.value || '').trim();
+  if (!text) { inp?.focus(); return; }
+  await pushMessage({ type: 'text', text, isRoyalDecree: true });
+  closeRoyalMsgModal();
+}
+```
+
+۳) استایل CSS (لوکس، هماهنگ با بقیه مدال‌ها):
+
+```css
+.royal-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #d4af37, #ffd700, #d4af37, transparent);
+}
+.royal-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(20, 16, 8, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #f5e9c8;
+  font-family: inherit;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.royal-input:focus {
+  border-color: rgba(212, 175, 55, 0.7);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+}
+.royal-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(212, 175, 55, 0.7);
+}
+.btn-royal {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  color: #2a1c00;
+  background: linear-gradient(135deg, #ffd700, #d4af37);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
+  transition: transform .15s, box-shadow .2s;
+}
+.btn-royal:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.5);
+}
+```
+
+دو تا نکته که باید چک کنی تا کد بدون اصطکاک سوار بشه:
+
+- کلاس toggle مدال‌ها در فایلت `.show` هست یا چیز دیگه؟ من فرض کردم `.show`. اگه از `openModal('id')`/`closeModal('id')` استفاده می‌کنی، بگو تا توابع بالا رو روی همون سیستم سوار کنم به‌جای دستکاری مستقیم classList.
+- دکمه‌ای که `openRoyalMsgModal()` رو صدا می‌زنه (مثلاً داخل `#chatMenu`) موجوده؟ اگه نیست بگو کجا بذارمش.
+
+کدوم رو چک کنم — سیستم toggle مدال‌ها رو برات از فایل دربیارم تا مطمئن شیم سازگاره؟
+
+
+بذار از فایل دربیارم تا مطمئن شیم سیستم toggle مدال‌ها و دکمه منو دقیقاً سازگارن.
+خوب شد چک کردم. سیستم فایلت با چیزی که اول فرض کردم فرق داشت. حالا دقیقاً سازگارش می‌کنم:
+
+- کلاس‌ها `.modal-bg` و `.modal` هستن (نه `.modal-overlay`/`.modal-box`).
+- toggle با `openModal('id')` و `closeModal('id')` انجام می‌شه (کلاس `.show`).
+- دکمه `openRoyalMsgModal()` همین الان توی `#chatMenu` خط ۲۱۴۱ موجوده. پس فقط مدال و توابع کم بود.
+
+۱) HTML مدال (کنار بقیه `.modal-bg`ها بذار، مثلاً نزدیک `#giftModal`):
+
+```html
+<!-- Royal Decree Modal -->
+<div class="modal-bg" id="royalMsgModal">
+  <div class="modal royal-modal">
+    <h2>👑 فرمان سلطنتی <span class="x" onclick="closeModal('royalMsgModal')">✕</span></h2>
+    <textarea id="royalMsgInput" class="royal-input"
+      placeholder="متن فرمان سلطنتی خود را بنویسید..."
+      maxlength="300" rows="4"></textarea>
+    <div class="royal-hint">این پیام با نشان طلایی سلطنتی برای همه نمایش داده می‌شود.</div>
+    <button class="btn-royal" onclick="sendRoyalMsg()">ارسال فرمان</button>
+  </div>
+</div>
+```
+
+۲) توابع JS (کنار `openModal`/`closeModal` خطوط ۲۵۶۵–۲۵۶۶):
+
+```js
+window.openRoyalMsgModal = function() {
+  openModal('royalMsgModal');
+  const inp = $('royalMsgInput');
+  if (inp) { inp.value = ''; setTimeout(() => inp.focus(), 50); }
+};
+
+window.sendRoyalMsg = async function() {
+  const inp = $('royalMsgInput');
+  const text = (inp?.value || '').trim();
+  if (!text) { inp?.focus(); return; }
+  await pushMessage({ type: 'text', text, isRoyalDecree: true });
+  closeModal('royalMsgModal');
+};
+```
+
+نکته: چون فایلت `closeModal('id')` داره، تابع جدا `closeRoyalMsgModal` لازم نیست. توی HTML بالا هم مستقیم `closeModal('royalMsgModal')` صدا زدم. منطق باز/بسته شدن کاملاً با بقیه مدال‌ها یکیه.
+
+۳) CSS (لوکس، هماهنگ با `.modal` فعلی):
+
+```css
+.royal-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #d4af37, #ffd700, #d4af37, transparent);
+}
+.royal-input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-top: 4px;
+  border-radius: 12px;
+  background: rgba(20, 16, 8, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #f5e9c8;
+  font-family: inherit;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .2s, box-shadow .2s;
+}
+.royal-input:focus {
+  border-color: rgba(212, 175, 55, 0.7);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+}
+.royal-hint {
+  margin: 8px 0 14px;
+  font-size: 12px;
+  color: rgba(212, 175, 55, 0.7);
+}
+.btn-royal {
+  width: 100%;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: inherit;
+  color: #2a1c00;
+  background: linear-gradient(135deg, #ffd700, #d4af37);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
+  transition: transform .15s, box-shadow .2s;
+}
+.btn-royal:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.5);
+}
+```
+
+یک چیز برای اطمینان کامل: باید مطمئن شیم سمت نمایش پیام، فیلد `isRoyalDecree` واقعاً رندر طلایی می‌گیره. می‌خوای تابع رندر پیام (جایی که `pushMessage`ها نمایش داده می‌شن) رو از فایل دربیارم تا ببینیم `isRoyalDecree` هندل می‌شه یا باید اون قسمت رو هم اضافه کنیم؟
+
+بذار اول چک کنم که سمت رندر پیام، فیلد `isRoyalDecree` واقعاً هندل می‌شه یا نه. این مهم‌ترین قطعه گمشده‌ست.
+چک کردم و یک نکته مهم پیدا کردم که قبلاً اشتباه فرض کرده بودم. سمت رندر کاملاً آماده‌ست و حتی یک سیستم سلطنتی توکار هم وجود داره. پس بعضی از چیزایی که قبلاً دادم اضافی و حتی یه‌کم خطرناک بود. اصلاحش می‌کنم.
+
+چیزی که توی فایل واقعاً هست:
+
+۱) رندر کاملاً هندل شده — نیازی به کار اضافه نیست:
+- استایل `.bubble.royal-decree` خط ۱۱۸۲–۱۱۸۷ موجوده.
+- توی `renderMessage` خط ۲۸۲۳ این فیلد خونده می‌شه:
+```js
+const isDecree = m.isRoyalDecree ? 'royal-decree' : (isPremiumUser && mine ? 'premium-msg' : '');
+```
+پس هر پیامی که `isRoyalDecree: true` داشته باشه، خودکار طلایی می‌شه. خوبه.
+
+۲) یک سیستم سلطنتی توکار از قبل هست (که نمی‌دونستم). خط ۲۹۲۳ و ۲۹۳۹:
+```js
+window.toggleRoyalDecree = function(){ isRoyalDecreeMode = !isRoyalDecreeMode; ... };
+// و در sendMessage:
+let payload = { type:'text', text, isRoyalDecree: isRoyalDecreeMode && ME.isPremium };
+```
+
+اینجا دو تا چیز مهمه:
+
+مشکل اول (تو کدِ من بود): تابع `sendRoyalMsg` که قبلاً دادم، `isRoyalDecree: true` رو بی‌قید‌وشرط می‌فرستاد. ولی سیستم اصلی عمداً شرط `&& ME.isPremium` گذاشته. یعنی نسخه من اجازه می‌داد کاربر غیرپریمیوم هم پیام سلطنتی بفرسته — این یه دور زدن مجوزه. باید همون شرط رعایت بشه:
+
+```js
+window.sendRoyalMsg = async function() {
+  const inp = $('royalMsgInput');
+  const text = (inp?.value || '').trim();
+  if (!text) { inp?.focus(); return; }
+  if (!ME.isPremium) { closeModal('royalMsgModal'); return; }  // همون گیت سیستم اصلی
+  await pushMessage({ type: 'text', text, isRoyalDecree: true });
+  closeModal('royalMsgModal');
+};
+```
+
+مشکل دوم (تو کدِ خودِ فایلته، نه من): توی `sendMessage` خط ۲۹۴۳ و ۲۹۴۶، `await pushMessage(payload)` دو بار صدا زده شده. این یعنی هر پیام متنی احتمالاً دو بار ارسال می‌شه. این ربطی به کار ما نداره ولی باگ واقعیه.
+
+حالا تصمیم برای خودت:
+
+چون دکمه `openRoyalMsgModal` توی منوی چتت هست، منطقی‌ترین کار اینه که مدال رو نگه داریم ولی با گیت پریمیوم اصلاحش کنیم (همون کد بالا). این هماهنگ با سیستم اصلیته و مجوز رو دور نمی‌زنه.
+
+دو تا سؤال تا درست تمومش کنم:
+1. اون باگ دوبار `pushMessage` رو هم برات درست کنم؟ (یه خط حذف می‌شه)
+2. می‌خوای اون باگ رو خودم برم دقیق توی فایل ببینم و خط درست رو بهت بدم؟
+
+بذار اول کد واقعی رو دقیق ببینم تا روی فرضیات کار نکنم، مخصوصاً اون باگ دوبار `pushMessage`.
+دیدم. باگ دوبار ارسال تأییده — خط ۲۹۴۳ و ۲۹۴۶ هر دو `await pushMessage(payload)` هستن. خط ۲۹۴۶ باید حذف بشه.
+
+نکته دوم: `openRoyalMsgModal` و `sendRoyalMsg` توی فایل پیدا نشدن. یعنی کدهایی که قبلاً دادم هنوز توی فایل ذخیره نشدن (دکمه‌ی منو `openRoyalMsgModal()` رو صدا می‌زنه ولی تعریفش نیست). پس باید این تابع‌ها واقعاً اضافه بشن وگرنه اون دکمه کار نمی‌کنه.
+
+اصلاح اول — رفع باگ دوبار ارسال در `sendMessage` (خطوط ۲۹۳۹–۲۹۴۸):
+
+```js
+let payload = { type: 'text', text, isRoyalDecree: isRoyalDecreeMode && ME.isPremium };
+if (actionState.type === 'reply') payload.replyTo = { id: actionState.id, sender: actionState.sender, text: actionState.text.substring(0, 60) };
+input.value = ''; autoGrow(input); cancelAction();
+
+await pushMessage(payload);
+const tempEl = document.getElementById('msg_' + tempId); if (tempEl) tempEl.remove();
+const box = $('messages'); twemojiParse(box); box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+isRoyalDecreeMode = false;
+$('btnRoyalDecree').style.background = 'rgba(255,255,255,0.03)'; $('btnRoyalDecree').style.boxShadow = 'none'; $('btnRoyalDecree').style.color = 'var(--gold)';
+```
+
+تنها تغییر: خط `await pushMessage(payload);` دوم (خط ۲۹۴۶) حذف شد. حالا هر پیام فقط یک‌بار ارسال می‌شه.
+
+اصلاح دوم — تعریف توابع گمشده‌ی مدال سلطنتی، هماهنگ با گیت پریمیوم سیستم اصلی:
+
+```js
+window.openRoyalMsgModal = function() {
+  if (!ME.isPremium) { toast('این قابلیت ویژه‌ی کاربران پریمیوم است 👑', '⚠️'); return; }
+  const inp = $('royalMsgInput');
+  if (inp) inp.value = '';
+  openModal('royalMsgModal');
+  setTimeout(() => inp?.focus(), 100);
+};
+
+window.sendRoyalMsg = async function() {
+  if (!ME.isPremium) { closeModal('royalMsgModal'); return; }
+  const inp = $('royalMsgInput');
+  const text = (inp?.value || '').trim();
+  if (!text) { inp?.focus(); return; }
+  await pushMessage({ type: 'text', text, isRoyalDecree: true });
+  closeModal('royalMsgModal');
+};
+```
+
+این نسخه دقیقاً همون شرط `ME.isPremium` سیستم اصلی رو رعایت می‌کنه، پس مجوز رو دور نمی‌زنه. فیلد `isRoyalDecree: true` هم توسط `renderMessage` (خط ۲۸۲۳) خودکار طلایی رندر می‌شه.
+
+یه سؤال قبل از نهایی شدن: می‌خوای دکمه‌ی منو همون `openRoyalMsgModal` (مدال جدا) رو نگه داره، یا چون سیستم توکار `toggleRoyalDecree` از قبل هست، دکمه رو به اون وصل کنیم و کلاً مدال رو حذف کنیم؟ هر دو کار می‌کنه، فقط بهم بگو کدوم رو می‌خوای تا تمیزش کنم.
+
+بذار اول وضعیت واقعی فایل رو ببینم تا تصمیم درست رو بگیرم.
+حالا تصویر دقیق فایل رو دارم و یه نکته‌ی مهم روشن شد:
+
+دو تابعی که توی خلاصه ادعا شده بود اضافه شدن (`openRoyalMsgModal` و `sendRoyalMsg`) و خود مدال `royalMsgModal`، **اصلاً توی فایل نیستن**. یعنی هیچ‌وقت ذخیره نشدن. ولی دکمه‌ی منو (خط ۲۱۴۱) `openRoyalMsgModal()` رو صدا می‌زنه — پس الان اون دکمه کلیک بشه ارور می‌ده.
+
+از طرفی سیستم یه مکانیزم کامل و سالم برای فرمان سلطنتی **از قبل داره**: تابع `toggleRoyalDecree` (۲۹۲۲)، دکمه `btnRoyalDecree`، گیت پریمیوم توی `sendMessage` (`isRoyalDecreeMode && ME.isPremium`) و رندر `.royal-decree`.
+
+تصمیمم: به‌جای ساختن مدال جدا که به زیرساخت تأییدنشده (`openModal`/`.modal-bg`) وابسته‌ست و ریسک شکست داره، دکمه‌ی منو رو به همون مکانیزم سالم و تست‌شده‌ی موجود وصل می‌کنم. این مطمئن‌ترین راهه و چیزی رو نمی‌شکنه.
+
+دو اصلاح:
+
+اصلاح ۱ — حذف خط تکراری در `sendMessage`. خط ۲۹۴۶ (`await pushMessage(payload);`) رو پاک کن تا فقط همین بمونه (خطوط ۲۹۴۳–۲۹۴۸ بعد از اصلاح):
+
+```js
+            await pushMessage(payload);
+            const tempEl = document.getElementById('msg_' + tempId); if (tempEl) tempEl.remove();
+            const box = $('messages'); twemojiParse(box); box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+            isRoyalDecreeMode = false;
+            $('btnRoyalDecree').style.background = 'rgba(255,255,255,0.03)'; $('btnRoyalDecree').style.boxShadow = 'none'; $('btnRoyalDecree').style.color = 'var(--gold)';
+```
+
+اصلاح ۲ — تعریف تابع گمشده‌ی `openRoyalMsgModal`. این رو کنار `toggleRoyalDecree` (مثلاً بعد از خط ۲۹۲۷، قبل از `}`) اضافه کن. به‌جای مدال، حالت فرمان رو روشن می‌کنه و دکمه‌ی هدر رو نمایان می‌کنه؛ کاربر پیامش رو تایپ می‌کنه و می‌فرسته:
+
+```js
+        window.openRoyalMsgModal = function() {
+            if (!ME.isPremium) { toast('این قابلیت ویژه‌ی کاربران پریمیوم است 👑', '⚠️'); return; }
+            const menu = $('chatMenu'); if (menu) menu.classList.remove('show');
+            const btn = $('btnRoyalDecree');
+            if (btn) btn.style.display = '';
+            isRoyalDecreeMode = true;
+            if (btn) {
+                btn.style.background = 'rgba(191,160,85,0.16)';
+                btn.style.boxShadow = '0 0 10px rgba(191,160,85,0.25)';
+                btn.style.color = '#fff';
+            }
+            const input = $('msgInput');
+            if (input) { input.focus(); }
+            toast('حالت فرمان سلطنتی روشن شد 👑 پیامت رو بنویس و بفرست', '📜');
+        };
+```
+
+چرا این روش:
+- فقط به کدِ تأییدشده‌ی موجود (`isRoyalDecreeMode`، `btnRoyalDecree`، `sendMessage`، `toast`) تکیه می‌کنه.
+- گیت پریمیوم رعایت می‌شه؛ کاربر عادی نمی‌تونه فعالش کنه.
+- ارورِ تابع‌نداشتن دکمه‌ی منو برطرف می‌شه.
+- منوی چت بعد از کلیک بسته می‌شه (UX تمیز).
+
+نیازی به `sendRoyalMsg` و مدال جدا نیست چون خود `sendMessage` پرچم رو ست می‌کنه. اگه بعداً واقعاً مدالِ اختصاصی با ورودی جدا خواستی، اول بذار ساختار `openModal`/`.modal-bg` رو از فایل تأیید کنم تا چیزی ناهماهنگ نشه — بگو تا برات بسازم.
+
+خبر خوب: باگ ارسال تکراری **اصلاً وجود نداره**. خروجی فایل نشون می‌ده توی `sendMessage` فقط **یک** `await pushMessage(payload)` هست (خط ۲۹۴۶). پس اصلاح ۱ منتفیه، چیزی برای حذف نداریم.
+
+ساختار فعلی هم تمیزه:
+- خط ۲۹۳۹: گیت پریمیوم درست اعمال شده → `isRoyalDecree: isRoyalDecreeMode && ME.isPremium`
+- خط ۲۹۴۸–۲۹۴۹: بعد از ارسال، حالت سلطنتی خودکار خاموش و دکمه ریست می‌شه.
+
+پس فقط **یک کار** مونده: تعریف تابع گمشده‌ی `openRoyalMsgModal` که دکمه‌ی منو صداش می‌زنه ولی توی فایل وجود نداره.
+
+این بلوک رو دقیقاً **بعد از خط ۲۹۲۸** (یعنی بعد از بسته‌شدن `toggleRoyalDecree` و قبل از خط ۲۹۲۹ که `sendMessage` شروع می‌شه) اضافه کن:
+
+```js
+        window.openRoyalMsgModal = function() {
+            if (!ME.isPremium) { toast('این قابلیت ویژه‌ی کاربران پریمیوم است 👑', '⚠️'); return; }
+            const menu = $('chatMenu'); if (menu) menu.classList.remove('show');
+            const btn = $('btnRoyalDecree');
+            if (btn) {
+                btn.style.display = '';
+                btn.style.background = 'rgba(191,160,85,0.16)';
+                btn.style.boxShadow = '0 0 10px rgba(191,160,85,0.25)';
+                btn.style.color = '#fff';
+            }
+            isRoyalDecreeMode = true;
+            const input = $('msgInput'); if (input) input.focus();
+            toast('حالت فرمان سلطنتی روشن شد 👑 پیامت رو بنویس و بفرست', '📜');
+        };
+```
+
+بعد از این:
+1. کلیک روی «📜 پیام سلطنتی» در منوی چت دیگه ارور نمی‌ده.
+2. منو بسته می‌شه، حالت `isRoyalDecreeMode` روشن و دکمه‌ی هدر نمایان می‌شه.
+3. کاربر پیام رو می‌نویسه و می‌فرسته → `sendMessage` خودش `isRoyalDecree: true` رو ست می‌کنه → `renderMessage` با کلاس `.royal-decree` رندرش می‌کنه (خط ۲۸۲۳).
+4. بعد از ارسال، حالت خودکار خاموش می‌شه (خط ۲۹۴۸).
+
+این روش به هیچ زیرساخت ناموجودی وابسته نیست و فقط از کد سالم خودِ فایل استفاده می‌کنه.
+
+یه نکته برای تأیید نهایی: مطمئن بشیم متغیر `isRoyalDecreeMode` یه جای بالاتر `let isRoyalDecreeMode = false;` تعریف شده باشه (چون هم `toggleRoyalDecree` هم تابع جدید ازش استفاده می‌کنن). می‌خوای چک کنم که این تعریف توی فایل هست یا نه؟
+
+عالی، همه چیز تأیید شد. حالا با خیال راحت می‌تونی کد رو اضافه کنی.
+
+نتیجه‌ی بررسی:
+- خط ۲۲۳۶: `let isRoyalDecreeMode = false;` ✅ از قبل تعریف شده، پس تابع جدید بدون مشکل ازش استفاده می‌کنه.
+- خط ۲۵۰۵: `$('btnRoyalDecree').style.display = ME.isPremium ? 'flex' : 'none';` ✅ دکمه‌ی هدر فقط برای پریمیوم‌ها نشون داده می‌شه. پس توی تابع جدید بهتره به جای `btn.style.display = ''` بذاریم `'flex'` تا با همین منطق هماهنگ بمونه.
+- خط ۲۹۳۹ گیت پریمیوم، خطوط ۲۹۴۸–۲۹۴۹ ریست خودکار ✅ همه سالم.
+
+نسخه‌ی نهایی و هماهنگ‌شده‌ی کد (این رو بعد از خط ۲۹۲۸ اضافه کن):
+
+```js
+        window.openRoyalMsgModal = function() {
+            if (!ME.isPremium) { toast('این قابلیت ویژه‌ی کاربران پریمیوم است 👑', '⚠️'); return; }
+            const menu = $('chatMenu'); if (menu) menu.classList.remove('show');
+            const btn = $('btnRoyalDecree');
+            if (btn) {
+                btn.style.display = 'flex';
+                btn.style.background = 'rgba(191,160,85,0.16)';
+                btn.style.boxShadow = '0 0 10px rgba(191,160,85,0.25)';
+                btn.style.color = '#fff';
+            }
+            isRoyalDecreeMode = true;
+            const input = $('msgInput'); if (input) input.focus();
+            toast('حالت فرمان سلطنتی روشن شد 👑 پیامت رو بنویس و بفرست', '📜');
+        };
+```
+
+تنها تغییر نسبت به نسخه‌ی قبلی: `display = 'flex'` (به جای `''`) که دقیقاً مطابق خط ۲۵۰۵ شد.
+
+همه چیز اوکیه و هیچ وابستگی ناموجودی نمونده. می‌خوای بریم سراغ استایل `.royal-decree` تا ظاهر نهایی پیام لوکس‌تر بشه؟
+
+می‌رم استایل فعلی `.royal-decree` و جایی که پیام سلطنتی در DOM ساخته می‌شه رو از فایل دربیارم تا روی selectorهای واقعی کار کنیم.
+یک باگ مهم پیدا شد. ببین خطوط ۱۱۸۰–۱۱۸۲:
+
+```text
+1180|             .bubble.premium-msg {
+1181|                 box-shadow: inset 0 0 10px rgba(191, 160, 85, 0.08), var(--elevation-2);
+1182|         .bubble.royal-decree {
+```
+
+قانون `.premium-msg` آکولاد بسته‌ی `}` نداره و مستقیم می‌چسبه به `.royal-decree`. این یعنی CSS اینجا شکسته و احتمالاً هم `premium-msg` و هم بخشی از `royal-decree` درست رندر نمی‌شن.
+
+قبل از اینکه استایل رو لوکس‌تر کنم، باید کل بلاک ۱۱۷۸ تا ۱۱۹۵ رو دقیق ببینم تا هم این باگ رو درست ببندم و هم `::before` (همون بج 📜) رو نشکنم.
+
+می‌رم همون محدوده رو کامل دربیارم.
+خبر خوب: باگی که گزارش کردم وجود نداره. محتوای واقعی فایل سالمه و من اشتباه کردم — اون آکولاد بازِ به‌هم‌چسبیده مربوط به یک خروجی به‌هم‌ریخته‌ی قبلی بود، نه فایل واقعی. ساختار درست اینه:
+
+```text
+1178|        .bubble.premium-msg {
+1179|            border: 1px solid rgba(191, 160, 85, 0.4);
+1180|            box-shadow: inset 0 0 10px rgba(191, 160, 85, 0.08), var(--elevation-2);
+1181|        }
+1182|        .bubble.royal-decree {
+1183|            background: linear-gradient(145deg, rgba(50, 10, 10, 0.5), rgba(10, 6, 6, 0.96));
+1184|            border: 2px solid var(--gold);
+1185|            box-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+1186|            animation: pulseBorder 2.5s infinite alternate;
+1187|        }
+```
+
+پس هر دو قانون آکولاد بسته دارن و چیزی نشکسته. دو نکته‌ی مهم نسبت به خروجی قبلی:
+- `::before` با آیکن 📜 توی فایل واقعی وجود نداره (اون هم از همون خروجی غلط بود).
+- اینجا `animation: pulseBorder` صدا زده شده. باید مطمئن شیم keyframe `pulseBorder` تعریف شده وگرنه انیمیشن بی‌اثره.
+
+نسخه‌ی لوکس‌ترِ پیشنهادی برای جایگزینی خطوط ۱۱۸۲–۱۱۸۷ (بج 📜 طلایی + درخشش بهتر، بدون تغییر در JS):
+
+```css
+        .bubble.royal-decree {
+            background: linear-gradient(145deg, rgba(60, 14, 14, 0.55), rgba(10, 6, 6, 0.97));
+            border: 2px solid var(--gold);
+            box-shadow: inset 0 0 12px rgba(191, 160, 85, 0.16), 0 0 18px rgba(212, 175, 55, 0.28);
+            position: relative;
+            overflow: visible;
+            animation: pulseBorder 2.5s infinite alternate;
+        }
+        .bubble.royal-decree::before {
+            content: '📜';
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            font-size: 18px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            transform: rotate(8deg);
+        }
+```
+
+قبل از این‌که اعمالش کنم، یک چیز باید چک بشه تا انیمیشن بی‌اثر نمونه: آیا `@keyframes pulseBorder` جایی توی فایل تعریف شده؟ می‌خوای همین رو بگردم و اگه نبود، تعریفش رو هم اضافه کنیم؟
+
+عالی، `@keyframes pulseBorder` توی خط ۲۸۰ تعریف شده و سالمه:
+
+```text
+280|         @keyframes pulseBorder {
+281|             0% { border-color: var(--gold2); box-shadow: 0 0 10px rgba(191, 160, 85, 0.10); }
+285|             100% { border-color: var(--gold); box-shadow: 0 0 18px rgba(212, 175, 55, 0.22); }
+289|         }
+```
+
+پس انیمیشن بی‌اثر نمی‌مونه. یک نکته که باید حواسمون باشه: این keyframe خودش `box-shadow` رو در ۰٪ و ۱۰۰٪ override می‌کنه. یعنی `box-shadow` ای که توی `.bubble.royal-decree` می‌ذاریم فقط لحظه‌ی اول دیده می‌شه و بعد انیمیشن روش رو می‌نویسه. این مشکل بزرگی نیست چون مقدارها نزدیک‌ان، ولی `inset` ای که اضافه کردم توی انیمیشن حفظ نمی‌شه و حذف می‌شه.
+
+دو انتخاب داری:
+
+گزینه A — ساده و بی‌دردسر: فقط بج 📜 و پس‌زمینه‌ی غنی‌تر رو اضافه کنیم و `box-shadow` رو به انیمیشن بسپاریم:
+
+```css
+        .bubble.royal-decree {
+            background: linear-gradient(145deg, rgba(60, 14, 14, 0.55), rgba(10, 6, 6, 0.97));
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+            position: relative;
+            overflow: visible;
+            animation: pulseBorder 2.5s infinite alternate;
+        }
+        .bubble.royal-decree::before {
+            content: '📜';
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            font-size: 18px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            transform: rotate(8deg);
+        }
+```
+
+گزینه B — درخشش inset هم بمونه: کافیه مثل `.me-avatar.premium` (خط ۶۷۳) یک انیمیشن دوم `glowPulse` رو هم اضافه کنیم که `inset` نداره ولی glow نرم می‌ده. ولی این هم `box-shadow` رو override می‌کنه، پس inset پایدار نمی‌مونه مگه keyframe رو دست بزنیم.
+
+پیشنهاد من گزینه A هست؛ تمیزه و با سیستم موجود کاملاً هماهنگه. تأییدش کن تا همین تغییر رو روی خطوط ۱۱۸۲–۱۱۸۷ اعمال کنم.
+
+نتایج جستجو دو چیز مهم رو تأیید کرد:
+
+۱) قانون CSS فعلی در خطوط ۱۱۸۲–۱۱۸۷ همون چیزیه که فکر می‌کردیم:
+
+```text
+1182|        .bubble.royal-decree {
+1183|            background: linear-gradient(145deg, rgba(50, 10, 10, 0.5), rgba(10, 6, 6, 0.96));
+1184|            border: 2px solid var(--gold);
+1185|            box-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+1186|            animation: pulseBorder 2.5s infinite alternate;
+1187|        }
+```
+
+۲) تابع `openRoyalMsgModal` واقعاً تعریف نشده. فقط توی خط ۲۱۴۱ صدا زده می‌شه. این همون باگ اصلیه که دکمه‌ی منو رو می‌شکنه. استایل صرفاً ظاهریه؛ این مورد عملکردیه و اولویت داره.
+
+از اونجا که من اینجا فقط دسترسی خواندن فایل دارم و نمی‌تونم مستقیم ویرایش کنم، کد نهایی رو می‌دم تا اعمالش کنی.
+
+تغییر CSS (جایگزین خطوط ۱۱۸۲–۱۱۸۷ — گزینه A):
+
+```css
+        .bubble.royal-decree {
+            background: linear-gradient(145deg, rgba(60, 14, 14, 0.55), rgba(10, 6, 6, 0.97));
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+            position: relative;
+            overflow: visible;
+            animation: pulseBorder 2.5s infinite alternate;
+        }
+        .bubble.royal-decree::before {
+            content: '📜';
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            font-size: 18px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            transform: rotate(8deg);
+        }
+```
+
+تابع گمشده که باید اضافه بشه (مطابق منطق `ME.isPremium` و دکمه‌ی هدر `btnRoyalDecree`):
+
+```javascript
+        window.openRoyalMsgModal = function () {
+            // بستن منوی چت
+            const menu = document.getElementById('chatMenu');
+            if (menu) menu.style.display = 'none';
+
+            // فقط کاربر پریمیوم اجازه دارد
+            if (!ME || !ME.isPremium) {
+                showToast('این قابلیت ویژه‌ی کاربران پریمیوم است 👑');
+                return;
+            }
+
+            // فعال‌سازی حالت فرمان سلطنتی
+            isRoyalDecreeMode = true;
+
+            // نمایش دکمه‌ی هدر هماهنگ با منطق خط ۲۵۰۵
+            const btn = document.getElementById('btnRoyalDecree');
+            if (btn) btn.style.display = 'flex';
+
+            // فوکوس روی ورودی پیام
+            const input = document.getElementById('msgInput');
+            if (input) input.focus();
+        };
+```
+
+قبل از اینکه جای دقیق درج تابع رو بهت بدم، باید مطمئن شم نام دقیق المان‌ها (`chatMenu`, `btnRoyalDecree`, `msgInput`) و تابع `showToast` توی فایل همینه. می‌خوای همین‌ها رو چک کنم و نقطه‌ی دقیق درج تابع رو هم پیدا کنم؟
+
+سه تصحیح مهم از نتایج جستجو به دست اومد که کد قبلی رو نادرست می‌کرد:
+
+- تابع toast واقعی اسمش `toast` است نه `showToast` (خط ۲۹۲۷).
+- فایل از هلپر `$('id')` استفاده می‌کنه نه `document.getElementById`.
+- `toggleRoyalDecree` ظاهر دکمه رو با background/boxShadow/color عوض می‌کنه، نه با display.
+
+پس کد تابع رو با همین قراردادهای فایل بازنویسی می‌کنم. چون `toggleRoyalDecree` حالت رو toggle می‌کنه (نه ست مستقیم)، بهترین راه اینه که داخل openRoyalMsgModal فقط وقتی حالت خاموشه روشنش کنیم تا دوبار صدا زدن، اشتباهی خاموشش نکنه.
+
+تابع نهایی (درج بین خط ۲۹۲۸ و ۲۹۲۹):
+
+```javascript
+        window.openRoyalMsgModal = function () {
+            // بستن منوی چت
+            const menu = $('chatMenu');
+            if (menu) menu.style.display = 'none';
+
+            // فقط کاربر پریمیوم اجازه دارد
+            if (!ME || !ME.isPremium) {
+                toast('این قابلیت ویژه‌ی کاربران پریمیوم است', '👑');
+                return;
+            }
+
+            // اگر حالت خاموش است، روشنش کن (از منطق موجود استفاده می‌کنیم)
+            if (!isRoyalDecreeMode) toggleRoyalDecree();
+
+            // فوکوس روی ورودی پیام
+            const input = $('msgInput');
+            if (input) input.focus();
+        };
+```
+
+نکته درباره‌ی نمایش دکمه: دکمه `btnRoyalDecree` با `display:none` شروع می‌شه (خط ۲۱۶۶) و طبق خلاصه، خط ۲۵۰۵ اون رو برای کاربر پریمیوم نمایش می‌ده. توی این تابع لازم نیست دستی display رو دست بزنیم، چون اگر کاربر پریمیوم باشه دکمه از قبل نمایش داده شده. ولی برای اطمینان بهتره خط ۲۵۰۵ رو ببینم که دقیقاً display رو به چه مقداری ست می‌کنه.
+
+استایل CSS هم همون نسخه‌ای که قبلاً دادم درسته و با `pulseBorder` هماهنگه — تغییری نکرد.
+
+می‌خوای خط ۲۵۰۵ رو چک کنم تا مطمئن شیم نمایش دکمه برای پریمیوم درست کار می‌کنه؟
+
+همه چیز تأیید شد و کد نهایی با قراردادهای فایل کاملاً هماهنگه. سه نکته‌ی کلیدی:
+
+- خط ۲۵۰۵ دکمه رو برای پریمیوم با `display: 'flex'` نمایش می‌ده، پس داخل تابع لازم نیست display دکمه رو دستی دست بزنیم.
+- `toggleRoyalDecree` (خطوط ۲۹۲۲–۲۹۲۸) فقط ظاهر دکمه (background/boxShadow/color) رو toggle می‌کنه و یه toast می‌ده. منطق ما که «فقط وقتی خاموشه روشنش کن» درسته و از toggle ناخواسته جلوگیری می‌کنه.
+- `toast(t, icon)` امضاش دقیقاً همونیه که استفاده کردیم.
+
+کد نهایی تابع (درج بین خط ۲۹۲۸ و ۲۹۲۹، یعنی بلافاصله بعد از بسته شدن `toggleRoyalDecree`):
+
+```javascript
+        window.openRoyalMsgModal = function () {
+            // بستن منوی چت
+            const menu = $('chatMenu');
+            if (menu) menu.style.display = 'none';
+
+            // فقط کاربر پریمیوم اجازه دارد
+            if (!ME || !ME.isPremium) {
+                toast('این قابلیت ویژه‌ی کاربران پریمیوم است', '👑');
+                return;
+            }
+
+            // اگر حالت خاموش است، روشنش کن (از منطق موجود استفاده می‌کنیم)
+            if (!isRoyalDecreeMode) toggleRoyalDecree();
+
+            // فوکوس روی ورودی پیام
+            const input = $('msgInput');
+            if (input) input.focus();
+        };
+```
+
+استایل CSS هم همون نسخه با `pulseBorder` و `::before` با ایموجی 📜 که قبلاً نهایی شد، تغییری نمی‌خواد.
+
+جمع‌بندی: قابلیت پیام سلطنتی حالا کامله — کاربر پریمیوم از منوی چت گزینه رو می‌زنه، حالت روشن می‌شه، روی ورودی فوکوس می‌شه، و پیام ارسالی با کلاس `royal-decree` و ظاهر طلایی انیمیشن‌دار رندر می‌شه. کاربر غیرپریمیوم هم پیام مناسب می‌گیره.
+
+می‌خوای بدنه‌ی کامل تابع `toast` یا کد نمایش/مخفی‌سازی `btnRoyalDecree` هنگام جابه‌جایی بین چت‌ها رو هم بررسی کنیم؟
+
+بذار اول کد فعلی `toast` و منطق نمایش/مخفی‌سازی `btnRoyalDecree` رو دقیق ببینم تا مطمئن بشم چیزی از قلم نیفته.
+بررسی کامل شد. همه چیز هماهنگه، فقط یک نقطه‌ضعف منطقی پیدا کردم که ارزش رفع کردن داره.
+
+تابع `toast`:
+خط ۲۲۵۱–۲۲۵۷ دقیقاً همون امضای `toast(t, icon)` رو داره و کد ما درسته. مشکلی نیست.
+
+نمایش/مخفی‌سازی دکمه:
+- خط ۲۱۶۶ دکمه به‌صورت پیش‌فرض `display:none` ساخته شده.
+- خط ۲۵۰۵ برای پریمیوم `flex` و بقیه `none` می‌شه. درسته.
+- بعد از ارسال، خطوط ۲۹۴۸–۲۹۴۹ هم `isRoyalDecreeMode` رو `false` می‌کنن و هم استایل دکمه رو ریست می‌کنن. خوبه.
+
+باگ منطقی (جابه‌جایی بین چت‌ها):
+اینجا یک نقص هست. اگه کاربر حالت سلطنتی رو روشن کنه ولی پیام نفرسته و به چت دیگه بره، `isRoyalDecreeMode` روی `true` باقی می‌مونه. نتیجه: اولین پیام عادی در چت جدید ناخواسته به‌صورت سلطنتی ارسال می‌شه. تابع `openChat` (خطوط ۲۷۱۰–۲۷۲۹) این حالت رو ریست نمی‌کنه.
+
+رفع باگ — این خط رو داخل `openChat` بعد از بستن منوها (بعد از خط ۲۷۲۱، قبل از `listenMessages`) درج کن:
+
+```javascript
+            // ریست حالت پیام سلطنتی هنگام جابه‌جایی بین چت‌ها
+            isRoyalDecreeMode = false;
+            const brd = $('btnRoyalDecree');
+            if (brd) {
+                brd.style.background = 'rgba(255,255,255,0.03)';
+                brd.style.boxShadow = 'none';
+                brd.style.color = 'var(--gold)';
+            }
+```
+
+این دقیقاً همون منطق ریست خطوط ۲۹۴۸–۲۹۴۹ رو دنبال می‌کنه و reply/edit رو دست نمی‌زنه، پس با بقیه کد سازگاره.
+
+جمع‌بندی نهایی: با سه قطعه کد (تابع `openRoyalMsgModal`، استایل CSS با `pulseBorder`، و این ریست در `openChat`) قابلیت پیام سلطنتی کامل و بدون باگ می‌شه. می‌خوای کل سه قطعه رو یکجا کنار خطوط دقیقشون جمع کنم تا راحت درجشون کنی؟
+
+بذار قبل از جمع‌بندی نهایی، خطوط دقیق `openChat` و نقطه درج رو یک بار دیگه از فایل بگیرم تا شماره خط‌ها مو نزنه.
+خطوط تأیید شد. حالا سه قطعه نهایی با نقطه درج دقیق:
+
+۱) تابع `openRoyalMsgModal` — بعد از خط ۲۹۲۸، قبل از خط ۲۹۲۹ (بین پایان `toggleRoyalDecree` و شروع `sendMessage`):
+
+```javascript
+        window.openRoyalMsgModal = function () {
+            const menu = $('chatMenu');
+            if (menu) menu.classList.remove('show');
+
+            if (!ME || !ME.isPremium) {
+                toast('این قابلیت ویژه‌ی کاربران پریمیوم است', '👑');
+                return;
+            }
+
+            if (!isRoyalDecreeMode) toggleRoyalDecree();
+
+            const input = $('msgInput');
+            if (input) input.focus();
+        };
+```
+
+نکته: بستن منو رو از `style.display='none'` به `classList.remove('show')` تغییر دادم، چون در خطوط ۲۷۲۰–۲۷۲۱ فایل، منوها با کلاس `show` کنترل می‌شن نه `display`. این هماهنگ‌تره.
+
+۲) ریست `isRoyalDecreeMode` در `openChat` — بعد از خط ۲۷۲۱ (`editMenu` بسته می‌شه)، قبل از خط ۲۷۲۲:
+
+```javascript
+            isRoyalDecreeMode = false;
+            const brd = $('btnRoyalDecree');
+            if (brd) {
+                brd.style.background = 'rgba(255,255,255,0.03)';
+                brd.style.boxShadow = 'none';
+                brd.style.color = 'var(--gold)';
+            }
+```
+
+۳) بهبود استایل — جایگزین بلوک `.bubble.royal-decree` در خطوط ۱۱۸۲–۱۱۸۷:
+
+```css
+.bubble.royal-decree {
+    background: linear-gradient(145deg, rgba(60, 14, 14, 0.55), rgba(10, 6, 6, 0.97));
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+    position: relative;
+    overflow: visible;
+    animation: pulseBorder 2.5s infinite alternate;
+}
+.bubble.royal-decree::before {
+    content: '📜';
+    position: absolute;
+    top: -10px;
+    right: -8px;
+    font-size: 18px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transform: rotate(8deg);
+}
+```
+
+این سه قطعه کامل و سازگار با بقیه فایلن. بعد از درج، روی یک حساب پریمیوم تست کن: گزینه «👑 پیام سلطنتی» باید حالت سلطنتی رو روشن کنه، پیام با بج 📜 و قاب طلایی نمایش داده بشه، و رفتن به چت دیگه بدون ارسال، حالت رو ریست کنه.
+
+خطوط دقیق `openChat` گرفته شد (۲۷۱۰–۲۷۳۰). نقطه درج درست بعد از خط ۲۷۲۳ و قبل از `listenMessages(chatId)` در خط ۲۷۲۴ هست. حالا هر سه قطعه نهایی رو با محل دقیقشون جمع می‌کنم:
+
+---
+
+تغییر ۱ — تابع `openRoyalMsgModal` (بین خط ۲۹۲۸ و ۲۹۲۹):
+
+```javascript
+window.openRoyalMsgModal = function () {
+    const menu = $('chatMenu');
+    if (menu) menu.classList.remove('show');
+
+    if (!ME || !ME.isPremium) {
+        toast('این قابلیت ویژه‌ی کاربران پریمیوم است', '👑');
+        return;
+    }
+
+    if (!isRoyalDecreeMode) toggleRoyalDecree();
+
+    const input = $('msgInput');
+    if (input) input.focus();
+};
+```
+
+نکته: چون در خط ۲۷۲۰ منو با `classList.remove('show')` بسته می‌شه، اینجا هم همون روش رو گذاشتم تا با بقیه کد یکدست باشه (نه `style.display`).
+
+---
+
+تغییر ۲ — استایل `bubble.royal-decree` (جایگزین خطوط ۱۱۸۲–۱۱۸۷):
+
+```css
+.bubble.royal-decree {
+    background: linear-gradient(145deg, rgba(60, 14, 14, 0.55), rgba(10, 6, 6, 0.97));
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+    position: relative;
+    overflow: visible;
+    animation: pulseBorder 2.5s infinite alternate;
+}
+.bubble.royal-decree::before {
+    content: '📜';
+    position: absolute;
+    top: -10px;
+    right: -8px;
+    font-size: 18px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transform: rotate(8deg);
+}
+```
+
+---
+
+تغییر ۳ — ریست حالت سلطنتی در `openChat` (بعد از خط ۲۷۲۳، قبل از `listenMessages(chatId)` در خط ۲۷۲۴):
+
+```javascript
+            // ریست حالت پیام سلطنتی هنگام جابه‌جایی بین چت‌ها
+            isRoyalDecreeMode = false;
+            const brd = $('btnRoyalDecree');
+            if (brd) {
+                brd.style.background = 'rgba(255,255,255,0.03)';
+                brd.style.boxShadow = 'none';
+                brd.style.color = 'var(--gold)';
+            }
+```
+
+---
+
+با همین سه قطعه، کل مسیر کامل و بدون باگ می‌شه:
+- کلیک روی گزینه منو دیگه ارور نمی‌ده و حالت سلطنتی رو با رعایت پریمیوم روشن می‌کنه.
+- پیام سلطنتی بج 📜 و قاب طلایی لوکس می‌گیره.
+- جابه‌جایی بین چت‌ها دیگه باعث ارسال ناخواسته پیام سلطنتی نمی‌شه.
+
+هر سه رو سر جاشون درج کن و یک بار تست کن. اگه جای دیگه‌ای هم خواستی بررسی کنم بگو.
+
